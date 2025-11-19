@@ -1,0 +1,89 @@
+from pydantic import BaseModel, field_validator, Field
+from typing import Literal
+from datetime import datetime, date
+from utils.helpers import player_name_to_id
+    
+class SavantFilters(BaseModel):
+    hfPT: list[str] = Field(default_factory=lambda: [])                 # Pitch type
+    hfPR: list[str] = Field(default_factory=lambda: [])                 # Pitch result
+    hfBBL: list[str] = Field(default_factory=lambda: [])                # Batted ball location
+    hfC: list[str] = Field(default_factory=lambda: [])                  # Count
+    player_type: Literal[
+    'pitcher', 'batter', 'fielder_2', 'fielder_3', 'fielder_4',
+    'fielder_5', 'fielder_6', 'fielder_7', 'fielder_8', 'fielder_9' 
+    ] = 'pitcher'                                                       # Player type
+    pitcher_throws: str = ''                                            # Pitcher handedness
+    game_date_gt: str = '' # date | None = None                                    # Game date greater than
+    hfTeam: list[str] = Field(default_factory=lambda: [])               # Team
+    position: str = ''                                                  # Position
+    hfInn: list[str] = Field(default_factory=lambda: [])                # Inning
+    hfFlag: list[str] = Field(default_factory=lambda: [])               # Flag
+
+    hfAB: list[str] = Field(default_factory=lambda: [])                 # At-bat result
+    hfZ: list[str] = Field(default_factory=lambda: [])                  # Zone
+    hfNewZones: list[str] = Field(default_factory=lambda: [])           # New zones
+    hfSea: list[str] = ['2025']                                         # Season
+    hfOuts: list[str] = Field(default_factory=lambda: [])               # Outs
+    batter_stands: str = ''                                             # Batter stance
+    home_road: str = ''                                                 # Home/road
+    game_date_lt: str = '' #date | None = None                                    # Game date less than
+    hfInfield: list[str] = Field(default_factory=lambda: [])            # Infield alignment
+    hfBBT: list[str] = Field(default_factory=lambda: [])                # Batted ball type
+
+    hfGT: list[str] = ['R']                                             # Game type
+    hfStadium: str = ''                                                 # Stadium
+    hfPull: list[str] = Field(default_factory=lambda: [])               # Pull direction
+    hfSit: list[str] = Field(default_factory=lambda: [])                # Situation
+    hfOpponent: list[str] = Field(default_factory=lambda: [])           # Opponent
+    hfSA: str = ''                                                      # Swing/take
+    hfMo: list[str] = Field(default_factory=lambda: [])                 # Month
+    hfRO: list[str] = Field(default_factory=lambda: [])                 # Runner on base
+    hfOutfield: list[str] = Field(default_factory=lambda: [])           # Outfield alignment
+
+    batters_lookup: list[str] = Field(default_factory=lambda: [], description="batter names; formatted last,first if possible")
+    pitchers_lookup: list[str] = Field(default_factory=lambda: [], description="pitcher names; formatted last,first if possible")
+
+    metric_1: str = ''                                                  # Metric 1
+    group_by: str = 'name'                                              # Group by
+    min_pas: str = '0'                                                  # Minimum plate appearances
+    min_pitches: str = '0'                                              # Minimum pitches
+    sort_col: str = 'pitches'                                           # Sort column
+    min_results: str = '0'                                              # Minimum results
+    player_event_sort: str = 'api_p_release_speed'                      # Player event sort
+    sort_order: str = 'desc'                                            # Sort order
+    
+    @field_validator("hfSea", mode="before")
+    @classmethod
+    def validate_season(cls, v):
+        print("validating season")
+        if not v or v == []:
+            return ['2025']
+
+        current_year = datetime.now().year
+        for season in v:
+            try:
+                year = int(season)
+                if year < 2008 or year > current_year:
+                    raise ValueError(f'Season {season} is not valid. Please enter a valid season')
+            except (ValueError,TypeError):
+                raise ValueError() 
+        print("season success") 
+        return v
+
+    @field_validator("batters_lookup", "pitchers_lookup", mode="before")
+    @classmethod
+    def convert_names(cls, player_list):
+        print("checking names")
+        player_ids = []
+        for player in player_list:
+            player_ids.append(player_name_to_id(player))
+        print("player id success")
+        return player_ids
+
+class Query(BaseModel):
+    query: str
+
+class QueryResponse(BaseModel):
+    filters: SavantFilters
+    url: str
+

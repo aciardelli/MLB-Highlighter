@@ -1,0 +1,27 @@
+{
+    "example1" : {
+        "prompt": "Show me the pitchers who have thrown the most cutters this season",
+        "fields" : {"hfPT": ["FC"], "player_type": "pitcher", "hfSea": ["2025"], "group_by": "name", "sort_col": "pitches", "sort_order": "desc"},
+        "explanation" : "We query for pitchers who throw cutters this season, and we want to group by name, sort by descending amount of pitches thrown"
+    },
+    "example2" : {
+        "prompt": "Show me the pitchers who have thrown the least changeups this season",
+        "fields" : {"hfPT": ["CH"], "player_type": "pitcher", "hfSea": ["2025"], "group_by": "name", "sort_col": "pitches", "sort_order": "asc"},
+        "explanation" : "We query for pitchers who throw changeups this season, and we want to group by name, sort by ascending amount of pitches thrown"
+    },
+    "example3" : {
+        "prompt" : "Shortstops that have seen the most curveballs",
+        "fields" : {"hfPT": ["CU", "KC", "CS"], "player_type": "batter", "position": "6", "group_by": "name", "sort_col": "pitches", "sort_order": "desc"},
+        "explanation" : "Since this is talking about a batter, we want to look for batters that play shortstop that have faced the different curveballs. We want to group by name, and sort by descending amount of pitches thrown"
+    },
+    "example4" : {
+        "prompt" : "Third basemen that have watched the most sliders thrown from the field",
+        "fields" : {"hfPT": ["SL"], "player_type": "fielder_5", "group_by": "name", "sort_col": "pitches", "sort_order": "desc"},
+        "explanation" : "Since they specify watching from the field we want to look for third basement that have seen sliders. We want to group by name and sort by descending amount of pitches"
+    },
+    "example5" : {
+        "prompt" : "Pitchers with the most home runs given up on the Rays",
+        "fields" : {"player_type": "pitcher", "hfTeam": ["139"], "hfAB": ["home run"], "group_by": "name", "sort_col": "pitches", "sort_order": "desc"},
+        "explanation" : "We want to look for pitchers on the Rays that have ended their at bats in home runs. We want to group by name and sort by descending amount of pitches"
+    }
+}

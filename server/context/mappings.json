@@ -1,0 +1,282 @@
+{
+    "hfPT": {
+        "meta": {
+            "name": "pitch types",
+            "context": "Matchup Descriptor",
+            "default value": "None",
+            "multiple selections": true
+        },
+        "mappings": {
+            "FF": { "name": "fastball", "aliases": ["four-seam"] },
+            "SI": { "name": "sinker", "aliases": [] },
+            "FC": { "name": "cutter", "aliases": ["cut fastball"] },
+            "CH": { "name": "changeup", "aliases": [] },
+            "FS": { "name": "split-finger", "aliases": [] },
+            "FO": { "name": "forkball", "aliases": [] },
+            "SC": { "name": "screwball", "aliases": [] },
+            "CU": { "name": "curveball", "aliases": [] },
+            "KC": { "name": "knuckle curve", "aliases": [] },
+            "CS": { "name": "slow curve", "aliases": [] },
+            "SL": { "name": "slider", "aliases": [] },
+            "ST": { "name": "sweeper", "aliases": [] },
+            "SV": { "name": "slurve", "aliases": [] },
+            "KN": { "name": "knuckleball", "aliases": [] },
+            "EP": { "name": "eephus", "aliases": [] },
+            "FA": { "name": "other", "aliases": [] },
+            "IN": { "name": "intentional ball", "aliases": [] },
+            "PO": { "name": "pitchout", "aliases": [] }
+        },
+        "groups": {
+            "fastballs": ["FF", "SI", "FC"],
+            "offspeed": ["CH", "FS", "FO", "SC"],
+            "breaking": ["CU", "KC", "CS", "SL", "ST", "SV", "KN"],
+            "other pitches": ["EP", "FA", "IN", "PO"]
+        }
+    },   
+
+    "hfAB": {
+        "meta": {
+            "name": "plate appearance result",
+            "context": "Matchup Descriptor",
+            "default value": "None",
+            "multiple selections": true
+        },
+        "mappings": {
+            "single": { "name": "single", "aliases": [] },
+            "double": { "name": "double", "aliases": [] },
+            "triple": { "name": "triple", "aliases": [] },
+            "home run": { "name": "home run", "aliases": ["homer", "dinger"] },
+            "field out": { "name": "field out", "aliases": [] },
+            "strikeout": { "name": "strikeout", "aliases": ["k"] },
+            "double play": { "name": "double play", "aliases": ["dp"] },
+            "fielders choice": { "name": "fielders choice", "aliases": [] }
+        },
+        "groups": {
+            "base hits": ["single", "double", "triple", "home run"],
+            "outs": ["field out", "strikeout", "double play", "fielders choice"]
+        }
+    },
+
+    "hfPR": {
+        "meta": {
+            "name": "pitch result",
+            "context": "Pitch Descriptor",
+            "default value": "None",
+            "multiple selections": true
+        },
+        "mappings": {
+            "bunt foul tip": { "name": "foul tip bunt", "aliases": [] },
+            "missed bunt": { "name": "missed bunt", "aliases": [] },
+            "foul tip": { "name": "foul tip", "aliases": [] },
+            "swinging strike": { "name": "swinging strike", "aliases": [] },
+            "swinging strike blocked": { "name": "swinging strike (blocked)", "aliases": [] },
+            "foul": { "name": "foul", "aliases": [] },
+            "foul bunt": { "name": "foul bunt", "aliases": [] },
+            "foul pitchout": { "name": "foul pitchout", "aliases": [] },
+            "hit into play": { "name": "in play", "aliases": [] },
+            "ball": { "name": "ball", "aliases": [] },
+            "ball in dirt": { "name": "ball in dirt", "aliases": [] },
+            "called strike": { "name": "called strike", "aliases": [] },
+            "pitchout": { "name": "pitchout", "aliases": [] },
+            "hit by pitch": { "name": "hit by pitch", "aliases": [] },
+            "intentional ball": { "name": "intentional ball", "aliases": [] },
+            "swinging pitchout": { "name": "swinging pitchout", "aliases": [] }
+        },
+        "groups": {
+            "swing and miss": ["bunt foul tip", "missed bunt", "foul tip", "swinging strike", "swinging strike blocked"],
+            "all swings": ["foul", "foul bunt", "bunt foul tip", "foul pitchout", "hit into play", "missed bunt", "foul tip", "swinging strike", "swinging strike blocked"],
+            "balls": ["ball", "ball in dirt", "intentional ball"],
+            "called": ["called strike"],
+            "other": ["pitchout", "hit by pitch", "swinging pitchout"]
+        }
+    },
+
+    "player_type": {
+        "meta": {
+            "name": "player type",
+            "context": "Matchup Descriptor",
+            "default value": "pitcher",
+            "multiple selections": false
+        },
+        "mappings": {
+            "pitcher": { "name": "pitcher", "aliases": [] },
+            "batter": { "name": "batter", "aliases": [] },
+            "fielder_2": { "name": "catcher", "aliases": [] },
+            "fielder_3": { "name": "first base", "aliases": ["1B"] },
+            "fielder_4": { "name": "second base", "aliases": ["2B"] },
+            "fielder_5": { "name": "third base", "aliases": ["3B"] },
+            "fielder_6": { "name": "shortstop", "aliases": ["SS"] },
+            "fielder_7": { "name": "left field", "aliases": ["LF"] },
+            "fielder_8": { "name": "center field", "aliases": ["CF"] },
+            "fielder_9": { "name": "right field", "aliases": ["RF"] }
+        },
+        "groups": {
+            "fielders": ["fielder_2", "fielder_3", "fielder_4", "fielder_5", "fielder_6", "fielder_7", "fielder_8", "fielder_9"],
+            "pitchers": ["pitcher"],
+            "batters": ["batter"]
+        }
+    },
+
+    "position": {
+        "meta": {
+            "name": "position",
+            "context": "Matchup Descriptor",
+            "default value": "None",
+            "multiple selections": false
+        },
+        "mappings": {
+            "1": { "name": "pitcher", "aliases": [] },
+            "2": { "name": "catcher", "aliases": [] },
+            "3": { "name": "first base", "aliases": ["1B"] },
+            "4": { "name": "second base", "aliases": ["2B"] },
+            "5": { "name": "third base", "aliases": ["3B"] },
+            "6": { "name": "shortstop", "aliases": ["SS"] },
+            "7": { "name": "left field", "aliases": ["LF"] },
+            "8": { "name": "center field", "aliases": ["CF"] },
+            "9": { "name": "right field", "aliases": ["RF"] },
+            "10": { "name": "designated hitter", "aliases": ["DH"] },
+            "IF": { "name": "infield", "aliases": [] },
+            "OF": { "name": "outfield", "aliases": [] }
+        },
+        "groups": {
+            "infield": ["1", "2", "3", "4", "5", "6", "IF"],
+            "outfield": ["7", "8", "9", "OF"],
+            "other": ["10"]
+        }
+    },
+
+    "batter_stands": {
+        "meta": {
+            "name": "batter stands",
+            "context": "if the batter stands in as a left handed hitter or right handed hitter",
+            "default value": "None",
+            "multiple selections": false
+        },
+        "mappings": {
+            "R": "Right",
+            "L": "Left"
+        },
+        "groups": {}
+    },
+
+    "hfTeam": {
+        "meta": {
+            "name": "team",
+            "context": "the team associated with the play",
+            "default value": "None",
+            "multiple selections": false
+        },
+        "mappings": {
+            "141": "Blue Jays",
+            "110": "Orioles",
+            "139": "Rays",
+            "111": "Red Sox",
+            "147": "Yankees",
+            "114": "Guardians",
+            "118": "Royals",
+            "116": "Tigers",
+            "142": "Twins",
+            "145": "White Sox",
+            "108": "Angels",
+            "117": "Astros",
+            "133": "Athletics",
+            "136": "Mariners",
+            "140": "Rangers",
+
+            "144": "Braves",
+            "146": "Marlins",
+            "121": "Mets",
+            "120": "Nationals",
+            "143": "Phillies",
+            "158": "Brewers",
+            "138": "Cardinals",
+            "112": "Cubs",
+            "134": "Pirates",
+            "113": "Reds",
+            "109": "Diamondbacks",
+            "119": "Dodgers",
+            "137": "Giants",
+            "135": "Padres",
+            "115": "Rockies"
+        },
+        "groups": {
+            "American League East": ["141","110","139","111","147"],
+            "American League Central": ["114","118","116","142","145"],
+            "American League West": ["108","117","133","136","140"],
+            "National League East": ["144","146","121","120","143"],
+            "National League Central": ["158","138","112","134","113"],
+            "National League West": ["109","119","137","135","115"],
+            "American League": ["141","110","139","111","147","114","118","116","142","145","108","117","133","136","140"],
+              "National League": ["144","146","121","120","143","158","138","112","134","113","109","119","137","135","115"]
+        }
+    },
+
+    "batters_lookup" : {
+        "meta": {
+            "name": "batters",
+            "context": "specific batters",
+            "default value": "None",
+            "multiple selections": true
+        },
+        "mappings": {},
+        "groups": {}
+    },
+
+    "pitchers_lookup" : {
+        "meta": {
+            "name": "pitchers",
+            "context": "specific pitchers",
+            "default value": "None",
+            "multiple selections": true
+        },
+        "mappings": {},
+        "groups": {}
+    },
+
+    "hfGT": {
+        "meta": {
+            "name": "game type",
+            "context": "Time Descriptor",
+            "default value": "R",
+            "multiple selections": true
+        },
+        "mappings": {
+            "R": { "name": "regular season", "aliases": [] },
+            "PO": { "name": "postseason", "aliases": ["playoffs"] }
+        },
+        "groups": {}
+    },
+
+    "hfMO": {
+        "meta": {
+            "name": "month",
+            "context": "specific month or months",
+            "default value": "None",
+            "multiple selections": true
+        },
+        "mappings": {
+            "4": { "name": "March/April", "alisases": [] },
+            "5": { "name": "May", "alisases": [] },
+            "6": { "name": "June", "alisases": [] },
+            "7": { "name": "July", "alisases": [] },
+            "8": { "name": "August", "alisases": [] },
+            "9": { "name": "September/October", "alisases": [] }
+        },
+        "groups": {}
+    },
+
+    "hfSea": {
+        "meta": {
+            "name": "season",
+            "context": "Time Descriptor",
+            "default value": "2025",
+            "multiple selections": true
+        },
+        "mappings": {
+            "2025": { "name": "2025", "aliases": [] },
+            "2024": { "name": "2024", "aliases": [] },
+            "2023": { "name": "2023", "aliases": [] }
+        },
+        "groups": {}
+    }
+}
