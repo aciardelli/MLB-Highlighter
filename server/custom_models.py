@@ -1,7 +1,7 @@
-from pydantic import BaseModel, field_validator, Field
+from pydantic import BaseModel, field_validator, Field, model_validator
 from typing import Literal
 from datetime import datetime, date
-from utils.helpers import player_name_to_id
+from utils.helpers import player_name_to_id, player_position
     
 class SavantFilters(BaseModel):
     hfPT: list[str] = Field(default_factory=lambda: [])                 # Pitch type
@@ -40,8 +40,9 @@ class SavantFilters(BaseModel):
     hfRO: list[str] = Field(default_factory=lambda: [])                 # Runner on base
     hfOutfield: list[str] = Field(default_factory=lambda: [])           # Outfield alignment
 
-    batters_lookup: list[str] = Field(default_factory=lambda: [], description="batter names; formatted last,first if possible")
-    pitchers_lookup: list[str] = Field(default_factory=lambda: [], description="pitcher names; formatted last,first if possible")
+    players_lookup: list[str] = Field(default_factory=lambda: [], description="player names; formatted last,first if possible")
+    batters_lookup: list[str] = Field(default_factory=lambda: [])
+    pitchers_lookup: list[str] = Field(default_factory=lambda: [])
 
     metric_1: str = ''                                                  # Metric 1
     group_by: str = 'name'                                              # Group by
@@ -70,15 +71,61 @@ class SavantFilters(BaseModel):
         print("season success") 
         return v
 
-    @field_validator("batters_lookup", "pitchers_lookup", mode="before")
+    @field_validator("players_lookup", mode="after")
     @classmethod
-    def convert_names(cls, player_list):
-        print("checking names")
+    def names_to_ids(cls, player_names):
+        print(f"checking names: {player_names}")
         player_ids = []
-        for player in player_list:
+        for player in player_names:
             player_ids.append(player_name_to_id(player))
         print("player id success")
         return player_ids
+
+    @field_validator("batters_lookup", "pitchers_lookup", mode="after")
+    @classmethod
+    def organize_players(cls, v, values):
+        print("organizing players by position")
+
+        player_ids = values.data.get('players_lookup', [])
+
+        print(f"player ids: {player_ids}")
+
+        if not player_ids:
+            return []
+
+        current_field = values.field_name
+        organized_players = []
+
+        for player_id in player_ids:
+            try:
+                position = player_position(player_id)
+                if current_field == 'pitchers_lookup' and position == 'Pitcher':
+                    organized_players.append(player_id)
+                if current_field == 'batters_lookup' and position != 'Pitcher':
+                    organized_players.append(player_id)
+            except Exception as e:
+                print(f"There was an error getting a player position: {e}")
+                continue
+
+        print(f"organized {len(organized_players)} players into {current_field}")
+        return organized_players
+
+    @model_validator(mode='after')
+    def organize_all_players(self):
+        if self.players_lookup and not self.batters_lookup and not self.pitchers_lookup:
+            for player_id in self.players_lookup:
+                position = player_position(player_id)
+                if position == 'Pitcher':
+                    self.pitchers_lookup.append(player_id)
+                else:
+                    self.batters_lookup.append(player_id)
+
+        if len(self.batters_lookup) > len(self.pitchers_lookup):
+            self.player_type = 'batter'
+        elif len(self.pitchers_lookup) > 0:
+            self.player_type = 'pitcher'
+
+        return self
 
 class Query(BaseModel):
     query: str

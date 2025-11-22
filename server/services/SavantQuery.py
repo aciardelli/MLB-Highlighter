@@ -24,6 +24,10 @@ class SavantQuery():
             Examples: {examples_md}
 
             Important: Only fill filters that are necessary and use exact mapped values.
+            
+            Parse all player names in the query, even if you are unsure that they are a player.
+            Please put these in players_lookup and format as last,first if possible, but if 
+            that is not provided just put their first or last name
             """
         )
 

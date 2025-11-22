@@ -71,3 +71,16 @@
 - sort_order: "desc"
 
 **Explanation:** We want to look for pitchers on the Rays that have ended their at bats in home runs. We want to group by name and sort by descending amount of pitches
+
+## Example 6
+**Prompt:** "aaron judge strikeouts against garrett crochet"
+
+**Fields:**
+- player_type: "batter"
+- hfAB: ["strikeout"]
+- players_lookup: ['Judge,Aaron', 'Crochet,Garrett']
+- group_by: "name"
+- sort_col: "pitches"
+- sort_order: "desc"
+
+**Explanation:** We want to find all instances of Aaron Judge striking out against Garrett Crochet

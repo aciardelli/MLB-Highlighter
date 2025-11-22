@@ -196,19 +196,10 @@
 - American League: 141, 110, 139, 111, 147, 114, 118, 116, 142, 145, 108, 117, 133, 136, 140
 - National League: 144, 146, 121, 120, 143, 158, 138, 112, 134, 113, 109, 119, 137, 135, 115
 
-## batters_lookup - Batters
+## players_lookup - Players
 **Meta Information:**
-- Name: batters
-- Context: specific batters
-- Default value: None
-- Multiple selections: true
-
-**Mappings:** (empty)
-
-## pitchers_lookup - Pitchers
-**Meta Information:**
-- Name: pitchers
-- Context: specific pitchers
+- Name: players
+- Context: specific players (batters or pitchers)
 - Default value: None
 - Multiple selections: true
 

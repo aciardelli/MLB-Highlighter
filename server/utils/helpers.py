@@ -1,5 +1,6 @@
 from pybaseball import playerid_lookup
 import pandas as pd
+import requests
 
 def open_md_file(filename):
     with open(f'context/{filename}', 'r') as file:
@@ -22,6 +23,13 @@ def player_name_to_id(player_name):
         player_id = str(player_df.iloc[0]['key_mlbam'])
         return player_id 
 
+def player_position(player_id):
+    url = f'https://statsapi.mlb.com/api/v1/people?personIds={player_id}&hydrate=currentTeam'
+    response = requests.get(url).json()
+
+    position = response['people'][0]['primaryPosition']['name']
+    return position
+
 def construct_url(params) -> str:
     params = params.model_dump()
     default_link = "https://baseballsavant.mlb.com/statcast_search?"
@@ -42,7 +50,7 @@ def construct_url(params) -> str:
             else:
                 default_link += '&'
         else:
-            return
+            return ""
 
     default_link = default_link[:-1]
     default_link += '#results'
