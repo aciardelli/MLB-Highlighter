@@ -113,18 +113,22 @@ class SavantFilters(BaseModel):
     @model_validator(mode='after')
     def organize_all_players(self):
         if self.players_lookup and not self.batters_lookup and not self.pitchers_lookup:
+            # set focus player
+            if first_player_id := self.players_lookup[0]:
+                try:
+                    first_player_position = player_position(first_player_id)
+                    self.player_type = 'pitcher' if first_player_position == 'Pitcher' else 'batter'
+                except Exception as e:
+                    print(f"Error getting position for first player {first_player_id}: {e}")
+
+            # organize positions
             for player_id in self.players_lookup:
                 position = player_position(player_id)
                 if position == 'Pitcher':
                     self.pitchers_lookup.append(player_id)
                 else:
                     self.batters_lookup.append(player_id)
-
-        if len(self.batters_lookup) > len(self.pitchers_lookup):
-            self.player_type = 'batter'
-        elif len(self.pitchers_lookup) > 0:
-            self.player_type = 'pitcher'
-
+        
         return self
 
 class Query(BaseModel):

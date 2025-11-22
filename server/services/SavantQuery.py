@@ -18,16 +18,17 @@ class SavantQuery():
 
             Process natural language queries into the correct filters.
             Only use values from the mappings provided.
+            
+            Parse all player names in the query, even if you are unsure that they are a player.
+            Please put these in players_lookup and format as last,first if possible, but if 
+            that is not provided just put their first or last name
+            Identify who the main focus player is, and put them first in the list
 
             Mappings: {mappings_md}
 
             Examples: {examples_md}
 
             Important: Only fill filters that are necessary and use exact mapped values.
-            
-            Parse all player names in the query, even if you are unsure that they are a player.
-            Please put these in players_lookup and format as last,first if possible, but if 
-            that is not provided just put their first or last name
             """
         )
 

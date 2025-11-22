@@ -83,4 +83,17 @@
 - sort_col: "pitches"
 - sort_order: "desc"
 
-**Explanation:** We want to find all instances of Aaron Judge striking out against Garrett Crochet
+**Explanation:** We want to find all instances of Aaron Judge striking out against Garrett Crochet. Aaron Judge is set as our focus player here because the person is looking for a query centered around Aaron Judge striking out.
+
+## Example 7
+**Prompt:** "trey yesavage striking out brandon lowe"
+
+**Fields:**
+- player_type: "pitcher"
+- hfAB: ["strikeout"]
+- players_lookup: ['Yesavage,Trey', 'Lowe,Brandon']
+- group_by: "name"
+- sort_col: "pitches"
+- sort_order: "desc"
+
+**Explanation:** We want to find all instances of Trey Yesavage striking out Brandon Lowe. Trey Yesavage is set as our focus player here because the person is looking for a query centered around Trey Yesavage striking out a player.
