@@ -1,4 +1,4 @@
-import InputBox from './components/InputBox.tsx'
+import SearchForm from './components/SearchForm.tsx'
 
 function App() {
   return (
@@ -10,7 +10,7 @@ function App() {
         <main className="text-center">
           <p className="mb-8 text-xl text-gray-300">Baseball statistics search interface</p>
           <div className="flex justify-center">
-            <InputBox placeholder="Enter a URL or describe what you're looking for..." />
+            <SearchForm />
           </div>
         </main>
       </div>
