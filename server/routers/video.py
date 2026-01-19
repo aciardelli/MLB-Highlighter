@@ -31,6 +31,18 @@ def get_job_status(job_id: str, db: Session = Depends(get_db)):
         "error_message": job.error_message
     }
 
+# serve the video
+@router.get('/stream/{job_id}')
+def stream_video(job_id: str, db: Session = Depends(get_db)):
+    store = JobStore(db)
+    job = store.get_job(job_id)
+    if not job or not job.video_url:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    if not os.path.exists(job.video_url):
+        raise HTTPException(status_code=404, detail="Video file not found")
+
+    return FileResponse(job.video_url, media_type='video/mp4')
 
 # url merging
 @router.post('/merge-url')
@@ -81,7 +93,6 @@ async def merge_from_query(query: Query, background_tasks: BackgroundTasks, db: 
         "original_query": query.query,
         "generated_url": result.url,
         "filters": result.filters,
-        "output_file": output_file,
         "job_id": job.id
     }
 
@@ -105,7 +116,7 @@ def process_video(url: str, output_file: str, job_id: str):
 
     try:
         store = JobStore(db)
-        store.update_job_status(job_id, JobStatus.PROCESSING, output_file)
+        store.update_job_status(job_id, JobStatus.PROCESSING)
 
         sm = SavantMerger(url,output_file)
         sm.parse_savant_page()
