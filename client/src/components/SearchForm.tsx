@@ -7,9 +7,10 @@ import { queryService } from '../api/queryService.ts';
 interface SearchFormProps {
     onResult?: (result: ProcessQueryResponse | MergeQueryResponse | MergeUrlResponse) => void;
     onError?: (error: string) => void;
+    disabled?: boolean;
 }
 
-const SearchForm: FC<SearchFormProps> = ({ onResult, onError }) => {
+const SearchForm: FC<SearchFormProps> = ({ onResult, onError, disabled }) => {
     const [inputMode, setInputMode] = useState<'url' | 'natural'>('url');
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false); 
@@ -68,7 +69,7 @@ const SearchForm: FC<SearchFormProps> = ({ onResult, onError }) => {
             */}
             <button
                 type="submit"
-                disabled={isLoading || !inputValue.trim()}
+                disabled={isLoading || !inputValue.trim() || disabled}
                 className="px-6 py-3 bg-[#BF0D3E] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#A00B36] transition-colors duration-200"
             >
                 {isLoading ? 'Searching...' : 'Search'}

@@ -119,10 +119,17 @@ def process_video(url: str, output_file: str, job_id: str):
         store.update_job_status(job_id, JobStatus.PROCESSING)
 
         sm = SavantMerger(url,output_file)
+
+        store.update_job_status(job_id, JobStatus.PARSING_PAGE)
         sm.parse_savant_page()
         sm.get_mp4s()
+
+        store.update_job_status(job_id, JobStatus.DOWNLOADING_VIDEOS)
         sm.download_videos()
+
+        store.update_job_status(job_id, JobStatus.MERGING_VIDEOS)
         sm.merge_videos()
+
         store.update_job_status(job_id, JobStatus.COMPLETE, output_file)
     except Exception as e:
         print(f"Video processing failed: {e}")
