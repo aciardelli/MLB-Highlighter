@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from services.SavantMerger import SavantMerger, valid_url
@@ -10,6 +10,7 @@ from models.job import JobStatus
 import os
 from dotenv import load_dotenv
 import uuid
+from limiter import limiter, ai_limit
 
 load_dotenv('../.env')
 
@@ -19,7 +20,8 @@ router = APIRouter()
 
 # job status
 @router.get('/status/{job_id}')
-def get_job_status(job_id: str, db: Session = Depends(get_db)):
+@limiter.exempt
+def get_job_status(request: Request, job_id: str, db: Session = Depends(get_db)):
     store = JobStore(db)
     job = store.get_job(job_id)
     if not job:
@@ -33,7 +35,8 @@ def get_job_status(job_id: str, db: Session = Depends(get_db)):
 
 # serve the video
 @router.get('/stream/{job_id}')
-def stream_video(job_id: str, db: Session = Depends(get_db)):
+@limiter.exempt
+def stream_video(request: Request, job_id: str, db: Session = Depends(get_db)):
     store = JobStore(db)
     job = store.get_job(job_id)
     if not job or not job.video_url:
@@ -46,7 +49,8 @@ def stream_video(job_id: str, db: Session = Depends(get_db)):
 
 # url merging
 @router.post('/merge-url')
-def merge_from_url(url: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+@limiter.limit("2/minute")
+def merge_from_url(request: Request, url: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if not valid_url(url):
         raise HTTPException(status_code=400, detail="Invalid Baseball Savant URL")
 
@@ -67,7 +71,8 @@ def merge_from_url(url: str, background_tasks: BackgroundTasks, db: Session = De
 
 # natural language merging
 @router.post('/merge-query')
-async def merge_from_query(query: Query, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+@limiter.limit("2/minute")
+async def merge_from_query(request: Request, query: Query, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     # process query and generate url
     try:
         service = SavantQuery()
@@ -98,7 +103,8 @@ async def merge_from_query(query: Query, background_tasks: BackgroundTasks, db: 
 
 # url processing - this is for testing
 @router.post('/process-query')
-async def process_query(query: Query):
+@limiter.limit("2/minute")
+async def process_query(request: Request, query: Query):
     try:
         service = SavantQuery()
         result = await service.process_query(query)
