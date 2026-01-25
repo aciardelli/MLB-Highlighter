@@ -1,9 +1,8 @@
 import os
+import shutil
 import subprocess
 from bs4 import BeautifulSoup
 from bs4.element import Tag, ResultSet
-import sys
-import argparse
 from typing import Optional, List
 from dataclasses import dataclass
 import logging
@@ -228,10 +227,14 @@ class SavantScraper:
 
 ############ MERGER ############
 class SavantMerger:
-    def __init__(self, video_data_list: List[VideoMetadata], output_path: Optional[str]=None):
+    def __init__(self, video_data_list: List[VideoMetadata], output_path: str):
         self.output_path = output_path
+        self.output_temp_path = os.path.splitext(self.output_path)[0]
         self.video_data_list = video_data_list
         self.temp_files = []
+
+        if not os.path.exists(self.output_temp_path):
+            os.makedirs(self.output_temp_path, exist_ok=True)
 
     # download videos from mp4 links
     async def download_videos(self, session: aiohttp.ClientSession) -> None:
@@ -241,7 +244,8 @@ class SavantMerger:
             try:
                 async with session.get(video_data.mp4_video_url) as response: 
                     response.raise_for_status()
-                    async with aiofiles.open(temp_filename, 'wb') as f:
+                    temp_filename_path = os.path.join(self.output_temp_path, temp_filename)
+                    async with aiofiles.open(temp_filename_path, 'wb') as f:
                         async for chunk in response.content.iter_chunked(262144):
                             await f.write(chunk)
                             # f.flush()
@@ -262,35 +266,32 @@ class SavantMerger:
         logging.info("Merging videos...")
         try:
             filelist = 'filelist.txt'
-            with open(filelist, 'w') as f:
+            filelist_path = os.path.join(self.output_temp_path, filelist)
+            with open(filelist_path, 'w') as f:
                 for temp_file in self.temp_files:
                     f.write(f'file {temp_file}\n')
-
-            if self.output_path == None:
-                self.output_path =  './merged.mp4'
 
             cmd = [
                 'ffmpeg',
                 '-f', 'concat',
                 '-safe', '0',
-                '-i', filelist,
+                '-i', filelist_path,
                 '-c', 'copy',
                 self.output_path,
-                '-y'
+                '-y',
             ]
 
-            subprocess.run(cmd, check=True)
+            subprocess.run(cmd, check=True, cwd=self.output_temp_path)
             print(f"Merged video saved as: {self.output_path}")
 
         except Exception as e:
             logging.error(f"Something went wrong: {e}")
         finally:
-            for temp in self.temp_files:
-                if os.path.exists(temp):
-                    os.remove(temp)
-
-            if os.path.exists('filelist.txt'):
-                os.remove('filelist.txt')
+            if os.path.exists(self.output_temp_path):
+                try:
+                    shutil.rmtree(self.output_temp_path)
+                except OSError as e:
+                    logging.error(f"Unable to remove {self.output_temp_path} directory.")
 
 def valid_url(url: str) -> bool:
     if url.startswith('https://baseballsavant.mlb.com/statcast_search'):

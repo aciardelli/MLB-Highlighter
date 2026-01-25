@@ -15,7 +15,7 @@ from limiter import limiter, ai_limit
 
 load_dotenv('../.env')
 
-OUTPUT_PATH = os.environ.get('OUTPUT_PATH')
+BASE_OUTPUT_PATH = os.environ.get('BASE_OUTPUT_PATH')
 
 router = APIRouter()
 
@@ -55,15 +55,15 @@ def merge_from_url(request: Request, url: str, background_tasks: BackgroundTasks
     if not valid_url(url):
         raise HTTPException(status_code=400, detail="Invalid Baseball Savant URL")
 
-    if not OUTPUT_PATH:
+    if not BASE_OUTPUT_PATH:
         raise HTTPException(status_code=400, detail="Invalid output path specified")
 
     store = JobStore(db)
     job = store.create_job()
 
-    output_file = os.path.join(OUTPUT_PATH, f'output_{uuid.uuid4()}.mp4')
+    output_path = os.path.join(BASE_OUTPUT_PATH, f'{job.id}.mp4')
 
-    background_tasks.add_task(process_video, url, output_file, job.id)
+    background_tasks.add_task(process_video, url, output_path, job.id)
 
     return {
         "message": "Video processing started",
@@ -84,15 +84,15 @@ async def merge_from_query(request: Request, query: Query, background_tasks: Bac
     if not valid_url(result.url):
         raise HTTPException(status_code=400, detail="Invalid Baseball Savant URL")
 
-    if not OUTPUT_PATH:
+    if not BASE_OUTPUT_PATH:
         raise HTTPException(status_code=400, detail="Invalid output path specified")
-
-    output_file = os.path.join(OUTPUT_PATH, f'output_{uuid.uuid4()}.mp4')
 
     store = JobStore(db)
     job = store.create_job()
 
-    background_tasks.add_task(process_video, result.url, output_file, job.id)
+    output_path = os.path.join(BASE_OUTPUT_PATH, f"{job.id}.mp4")
+
+    background_tasks.add_task(process_video, result.url, output_path, job.id)
 
     return {
         "message": "Video processing started",
@@ -118,14 +118,14 @@ async def process_query(request: Request, query: Query):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query processing failed: {str(e)}")
 
-async def process_video(url: str, output_file: str, job_id: str):
+async def process_video(url: str, output_path: str, job_id: str):
     db = SessionLocal()
 
     try:
         store = JobStore(db)
         store.update_job_status(job_id, JobStatus.PROCESSING)
 
-        connector = aiohttp.TCPConnector(limit=100, limit_per_host=10)
+        connector = aiohttp.TCPConnector(limit=0, limit_per_host=0)
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
 
@@ -135,14 +135,14 @@ async def process_video(url: str, output_file: str, job_id: str):
             await ss.parse_savant_page(session)
             await ss.get_mp4_links(session)
 
-            sm = SavantMerger(ss.video_data_list,output_file)
+            sm = SavantMerger(ss.video_data_list, output_path)
             store.update_job_status(job_id, JobStatus.DOWNLOADING_VIDEOS)
             await sm.download_videos(session)
 
             store.update_job_status(job_id, JobStatus.MERGING_VIDEOS)
             sm.merge_videos()
 
-            store.update_job_status(job_id, JobStatus.COMPLETE, output_file)
+            store.update_job_status(job_id, JobStatus.COMPLETE, output_path)
     except Exception as e:
         print(f"Video processing failed: {e}")
         store.update_job_status(job_id, JobStatus.FAILED)
