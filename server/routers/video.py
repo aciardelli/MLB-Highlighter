@@ -1,12 +1,13 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from services.SavantMerger import SavantMerger, valid_url
+from services.SavantMerger import SavantMerger, SavantScraper, valid_url
 from services.SavantQuery import SavantQuery
 from services.JobStore import JobStore
 from services.database import get_db, SessionLocal
 from models.custom_models import Query
 from models.job import JobStatus
+import aiohttp
 import os
 from dotenv import load_dotenv
 import uuid
@@ -117,26 +118,31 @@ async def process_query(request: Request, query: Query):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query processing failed: {str(e)}")
 
-def process_video(url: str, output_file: str, job_id: str):
+async def process_video(url: str, output_file: str, job_id: str):
     db = SessionLocal()
 
     try:
         store = JobStore(db)
         store.update_job_status(job_id, JobStatus.PROCESSING)
 
-        sm = SavantMerger(url,output_file)
+        connector = aiohttp.TCPConnector(limit=100, limit_per_host=10)
+        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
 
-        store.update_job_status(job_id, JobStatus.PARSING_PAGE)
-        sm.parse_savant_page()
-        sm.get_mp4s()
+            ss = SavantScraper(url)
 
-        store.update_job_status(job_id, JobStatus.DOWNLOADING_VIDEOS)
-        sm.download_videos()
+            store.update_job_status(job_id, JobStatus.PARSING_PAGE)
+            await ss.parse_savant_page(session)
+            await ss.get_mp4_links(session)
 
-        store.update_job_status(job_id, JobStatus.MERGING_VIDEOS)
-        sm.merge_videos()
+            sm = SavantMerger(ss.video_data_list,output_file)
+            store.update_job_status(job_id, JobStatus.DOWNLOADING_VIDEOS)
+            await sm.download_videos(session)
 
-        store.update_job_status(job_id, JobStatus.COMPLETE, output_file)
+            store.update_job_status(job_id, JobStatus.MERGING_VIDEOS)
+            sm.merge_videos()
+
+            store.update_job_status(job_id, JobStatus.COMPLETE, output_file)
     except Exception as e:
         print(f"Video processing failed: {e}")
         store.update_job_status(job_id, JobStatus.FAILED)
