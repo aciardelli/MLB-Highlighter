@@ -23,6 +23,7 @@ class SavantQuery():
             Please put these in players_lookup and format as last,first if possible, but if 
             that is not provided just put their first or last name
             Identify who the main focus player is, and put them first in the list
+            If there are no explicit players set, set player_type to either "batter" or "pitcher", whichever one likely fits the prompt best. Use "batter" when searching for a team's hitting and "pitching" when searching for a team's pitching.
 
             Mappings: {mappings_md}
 

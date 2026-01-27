@@ -152,7 +152,56 @@
 - Name: team
 - Context: the team associated with the play
 - Default value: None
-- Multiple selections: false
+- Multiple selections: true
+
+**Mappings:**
+- 141: Blue Jays
+- 110: Orioles
+- 139: Rays
+- 111: Red Sox
+- 147: Yankees
+- 114: Guardians
+- 118: Royals
+- 116: Tigers
+- 142: Twins
+- 145: White Sox
+- 108: Angels
+- 117: Astros
+- 133: Athletics
+- 136: Mariners
+- 140: Rangers
+- 144: Braves
+- 146: Marlins
+- 121: Mets
+- 120: Nationals
+- 143: Phillies
+- 158: Brewers
+- 138: Cardinals
+- 112: Cubs
+- 134: Pirates
+- 113: Reds
+- 109: Diamondbacks
+- 119: Dodgers
+- 137: Giants
+- 135: Padres
+- 115: Rockies
+
+**Groups:**
+- American League East: 141, 110, 139, 111, 147
+- American League Central: 114, 118, 116, 142, 145
+- American League West: 108, 117, 133, 136, 140
+- National League East: 144, 146, 121, 120, 143
+- National League Central: 158, 138, 112, 134, 113
+- National League West: 109, 119, 137, 135, 115
+- American League: 141, 110, 139, 111, 147, 114, 118, 116, 142, 145, 108, 117, 133, 136, 140
+- National League: 144, 146, 121, 120, 143, 158, 138, 112, 134, 113, 109, 119, 137, 135, 115
+
+## hfOpponent - Opposing Team
+**Meta Information:**
+- Name: opponent
+- Context: the opposing team during the play
+- Default value: None
+- Multiple selections: true
 
 **Mappings:**
 - 141: Blue Jays
@@ -216,7 +265,7 @@
 - R: regular season
 - PO: postseason (aliases: playoffs)
 
-## hfMO - Month
+## hfMo - Month
 **Meta Information:**
 - Name: month
 - Context: specific month or months

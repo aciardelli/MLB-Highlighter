@@ -1,82 +1,103 @@
 # Baseball Query Examples
 
 ## Example 1
-**Prompt:** "Show me the pitchers who have thrown the most cutters this season"
+**Prompt:** "Junior Caminero home runs against sliders"
 
 **Fields:**
-- hfPT: ["FC"]
-- player_type: "pitcher"
-- hfSea: ["2025"]
+- hfAB: ["home run"]
+- hfPT: ["SL"]
+- players_lookup: ['Caminero,Junior']
 - group_by: "name"
 - sort_col: "pitches"
 - sort_order: "desc"
 
-**Explanation:** We query for pitchers who throw cutters this season, and we want to group by name, sort by descending amount of pitches thrown
-
----
+**Explanation:** We want to find all instances of the player Junior Caminero hitting home runs against sliders.
 
 ## Example 2
-**Prompt:** "Show me the pitchers who have thrown the least changeups this season"
+**Prompt:** "Cody Bellinger hits against changeups"
 
 **Fields:**
+- hfAB: ["single", "double", "triple", "home run"]
 - hfPT: ["CH"]
-- player_type: "pitcher"
-- hfSea: ["2025"]
+- players_lookup: ['Bellinger,Cody']
 - group_by: "name"
 - sort_col: "pitches"
-- sort_order: "asc"
+- sort_order: "desc"
 
-**Explanation:** We query for pitchers who throw changeups this season, and we want to group by name, sort by ascending amount of pitches thrown
-
----
+**Explanation:** We want to find all instances of the player Cody Bellinger getting a hit which includes singles, doubles, triples, and home runs, against changeups.
 
 ## Example 3
-**Prompt:** "Shortstops that have seen the most curveballs"
+**Prompt:** "Tampa Bay Rays home runs in July"
 
 **Fields:**
-- hfPT: ["CU", "KC", "CS"]
 - player_type: "batter"
-- position: "6"
+- hfAB: ["home run"]
+- hfMo: ["7"]
+- hfTeam: ["139"]
 - group_by: "name"
 - sort_col: "pitches"
 - sort_order: "desc"
 
-**Explanation:** Since this is talking about a batter, we want to look for batters that play shortstop that have faced the different curveballs. We want to group by name, and sort by descending amount of pitches thrown
-
----
+**Explanation:** We want to find all instances of the Rays as a team hitting home runs in the month of July.
 
 ## Example 4
-**Prompt:** "Third basemen that have watched the most sliders thrown from the field"
-
-**Fields:**
-- hfPT: ["SL"]
-- player_type: "fielder_5"
-- group_by: "name"
-- sort_col: "pitches"
-- sort_order: "desc"
-
-**Explanation:** Since they specify watching from the field we want to look for third basement that have seen sliders. We want to group by name and sort by descending amount of pitches
-
----
-
-## Example 5
-**Prompt:** "Pitchers with the most home runs given up on the Rays"
+**Prompt:** "Diamondbacks pitchers striking out batters in August"
 
 **Fields:**
 - player_type: "pitcher"
-- hfTeam: ["139"]
-- hfAB: ["home run"]
+- hfAB: ["strikeout"]
+- hfMo: ["8"]
+- hfTeam: ["109"]
 - group_by: "name"
 - sort_col: "pitches"
 - sort_order: "desc"
 
-**Explanation:** We want to look for pitchers on the Rays that have ended their at bats in home runs. We want to group by name and sort by descending amount of pitches
+**Explanation:** We want to find all instances of the Diamondbacks as a team striking out batters in August.
+
+## Example 5
+**Prompt:** "Hunter Brown strikeouts against the Athletics"
+
+**Fields:**
+- hfAB: ["strikeout"]
+- players_lookup: ['Brown,Hunter']
+- hfOpponent: ["133"]
+- group_by: "name"
+- sort_col: "pitches"
+- sort_order: "desc"
+
+**Explanation:** Hunter Brown is our focus player and we want to search for times that he has struck out Athletics players. In this case, he is playing against the Athletics, so we have to set them as the opponent.
 
 ## Example 6
+**Prompt:** "Tarik Skubal striking out the ALC"
+
+**Fields:**
+- hfAB: ["strikeout"]
+- players_lookup: ['Skubal,Tarik']
+- hfOpponent: ["114", "118", "116", "142", "145"]
+- group_by: "name"
+- sort_col: "pitches"
+- sort_order: "desc"
+
+**Explanation:** Tarik Skubal is our focus player and we want to search for times that he has struck out American League Central (ALC) players. We must set hfOpponent to all of the teams in the ALC.
+
+## Example 7
+**Prompt:** "Aaron Judge doubles against the ALE in June"
+
+**Fields:**
+- hfAB: ["double"]
+- players_lookup: ['Judge,Aaron']
+- hfOpponent: ["141", "110", "139", "111", "147"]
+- hfMo: ["6"]
+- group_by: "name"
+- sort_col: "pitches"
+- sort_order: "desc"
+
+**Explanation:** Aaron Judge is our focus player and we want to search for times that he has hit a double against teams in the American League East (ALE) in the month of June. We must set hfOpponent to all ALE teams and hfMo to the month of May. 
+
+## Example 8
 **Prompt:** "aaron judge strikeouts against garrett crochet"
 
 **Fields:**
-- player_type: "batter"
 - hfAB: ["strikeout"]
 - players_lookup: ['Judge,Aaron', 'Crochet,Garrett']
 - group_by: "name"
@@ -85,11 +106,10 @@
 
 **Explanation:** We want to find all instances of Aaron Judge striking out against Garrett Crochet. Aaron Judge is set as our focus player here because the person is looking for a query centered around Aaron Judge striking out.
 
-## Example 7
+## Example 9
 **Prompt:** "trey yesavage striking out brandon lowe"
 
 **Fields:**
-- player_type: "pitcher"
 - hfAB: ["strikeout"]
 - players_lookup: ['Yesavage,Trey', 'Lowe,Brandon']
 - group_by: "name"
