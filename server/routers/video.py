@@ -5,12 +5,15 @@ from services.SavantMerger import SavantMerger, SavantScraper, valid_url
 from services.SavantQuery import SavantQuery
 from services.JobStore import JobStore
 from services.database import get_db, SessionLocal
-from models.custom_models import Query
+from models.schemas import Query
 from models.job import JobStatus
 import aiohttp
 import os
 from dotenv import load_dotenv
 from limiter import limiter, ai_limit
+import logging
+
+logger = logging.getLogger(__name__)
 
 load_dotenv('../.env')
 
@@ -146,7 +149,7 @@ async def process_video(url: str, output_path: str, job_id: str):
 
             store.update_job_status(job_id, JobStatus.COMPLETE, output_path)
     except Exception as e:
-        print(f"Video processing failed: {e}")
+        logger.error(f"Video processing failed: {e}")
         store.update_job_status(job_id, JobStatus.FAILED, error_message=e)
     finally:
         db.close()

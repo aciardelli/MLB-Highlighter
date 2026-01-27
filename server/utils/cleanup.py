@@ -4,6 +4,9 @@ import asyncio
 import os
 from services.database import SessionLocal
 from models.job import Base, Job
+import logging
+
+logger = logging.getLogger(__name__)
 
 async def cleanup_old_jobs():
     while True:
@@ -21,8 +24,8 @@ async def cleanup_old_jobs():
                     db.delete(job)
 
             db.commit()
-            print(f"Cleaned up {len(old_jobs)} old jobs")
+            logger.info(f"Cleaned up {len(old_jobs)} old jobs")
         except Exception as e:
-            print(f"Cleanup error: {e}")
+            logger.error(f"Cleanup error: {e}")
         finally:
             db.close()

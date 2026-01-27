@@ -10,6 +10,8 @@ import asyncio
 import aiofiles
 import aiohttp
 
+logger = logging.getLogger(__name__)
+
 # constants
 BASE_URL = 'https://baseballsavant.mlb.com'
 DEFAULT_OUTPUT = 'merged.mp4'
@@ -93,10 +95,10 @@ class SavantScraper:
                 soup = BeautifulSoup(html_content, 'html.parser')
                 return soup
         except aiohttp.ClientError as e:
-            logging.error(f"Failed to load page {url}: {e}")
+            logger.error(f"Failed to load page {url}: {e}")
             return None
         except Exception as e:
-            logging.error(f"Unexpected error loading {url}: {e}")
+            logger.error(f"Unexpected error loading {url}: {e}")
             return None
                 
     # parses all search section rows
@@ -151,29 +153,29 @@ class SavantScraper:
 
     # get all search sections on savant page and their individual video page urls
     async def parse_savant_page(self, session: aiohttp.ClientSession) -> None:
-        logging.info("Loading BaseballSavant query...")
+        logger.info("Loading BaseballSavant query...")
         soup = await self.load_page(session, self.url)
         if soup is None:
             raise RuntimeError(f"Failed to load main Baseball Savant page: {self.url}")
 
         table_rows = soup.find_all('tr', class_='search_row default-table-row')
         if not table_rows:
-            logging.warning("No search result rows found")
+            logger.warning("No search result rows found")
             return
         
         self.parse_search_rows(table_rows)
         if not self.search_section_list:
-            logging.warning("No valid search sections parsed")
+            logger.warning("No valid search sections parsed")
             return
 
-        logging.info(f"Parsed {len(self.search_section_list)} search sections")
+        logger.info(f"Parsed {len(self.search_section_list)} search sections")
 
         await self.get_video_page_urls(session)
         if not self.video_data_list:
-            logging.warning(f"No video URLs found")
+            logger.warning(f"No video URLs found")
             return
 
-        logging.info(f"Found {len(self.video_data_list)} video URLs")
+        logger.info(f"Found {len(self.video_data_list)} video URLs")
 
     # asyncio to store multiple mp4 links
     async def get_mp4_links(self, session: aiohttp.ClientSession) -> None:
@@ -182,7 +184,7 @@ class SavantScraper:
                 video_page = video_data.video_page_url
                 soup = await self.load_page(session, video_page)
                 if soup is None:
-                    logging.warning(f"Failed to load video page: {video_page}")
+                    logger.warning(f"Failed to load video page: {video_page}")
                     return False
                 
                 # parse metadata
@@ -190,26 +192,26 @@ class SavantScraper:
 
                 video_element = soup.find('video')
                 if not video_element:
-                    logging.warning(f"No video element found on page: {video_page}")
+                    logger.warning(f"No video element found on page: {video_page}")
                     return False
 
                 source_element = video_element.find('source')
                 if not source_element:
-                    logging.warning(f"No source element found on page: {video_page}")
+                    logger.warning(f"No source element found on page: {video_page}")
                     return False
 
                 mp4_link = source_element.get('src')
                 if not mp4_link:
-                    logging.warning(f"No mp4 link found on page: {video_page}")
+                    logger.warning(f"No mp4 link found on page: {video_page}")
                     return False
 
                 video_data.mp4_video_url = str(mp4_link) if mp4_link else None
                 return True
             except Exception as e:
-                logging.error(f"Error processing video: {video_data.video_page_url}: {e}")
+                logger.error(f"Error processing video: {video_data.video_page_url}: {e}")
                 return False
 
-        logging.info(f"Loading {len(self.video_data_list)} video pages...")
+        logger.info(f"Loading {len(self.video_data_list)} video pages...")
         tasks = [fetch_mp4_link(session, video_data) for video_data in self.video_data_list]
         await asyncio.gather(*tasks)
 
@@ -217,10 +219,10 @@ class SavantScraper:
         failed_count = len(self.video_data_list) - len(valid_videos)
 
         if failed_count > 0:
-            logging.warning(f"{failed_count} videos failed to get mp4 urls")
+            logger.warning(f"{failed_count} videos failed to get mp4 urls")
 
         self.video_data_list = valid_videos
-        logging.info(f"{len(self.video_data_list)} videos ready for download")
+        logger.info(f"{len(self.video_data_list)} videos ready for download")
 
         # makes videos chronological - TODO make a function for this
         self.video_data_list = self.video_data_list[::-1]
@@ -240,7 +242,7 @@ class SavantMerger:
     async def download_videos(self, session: aiohttp.ClientSession) -> None:
         async def download_video(session: aiohttp.ClientSession, i: int, video_data: VideoMetadata) -> Optional[str]:
             temp_filename = f"temp_video_{i}.mp4"
-            # logging.info("Downloading video:", i)
+            # logger.info("Downloading video:", i)
             try:
                 async with session.get(video_data.mp4_video_url) as response: 
                     response.raise_for_status()
@@ -252,10 +254,10 @@ class SavantMerger:
 
                 return temp_filename
             except Exception as e:
-                logging.error(f"Failed to download {video_data.mp4_video_url}: {e}")
+                logger.error(f"Failed to download {video_data.mp4_video_url}: {e}")
                 return None
 
-        logging.info(f"Downloading {len(self.video_data_list)} videos...")
+        logger.info(f"Downloading {len(self.video_data_list)} videos...")
         tasks = [download_video(session, i, video_data) for i, video_data in enumerate(self.video_data_list)]
         self.temp_files = await asyncio.gather(*tasks)
 
@@ -263,7 +265,7 @@ class SavantMerger:
 
     # merge downloaded videos
     def merge_videos(self) -> None:
-        logging.info("Merging videos...")
+        logger.info("Merging videos...")
         try:
             filelist = 'filelist.txt'
             filelist_path = os.path.join(self.output_temp_path, filelist)
@@ -282,16 +284,16 @@ class SavantMerger:
             ]
 
             subprocess.run(cmd, check=True, cwd=self.output_temp_path)
-            print(f"Merged video saved as: {self.output_path}")
+            logger.info(f"Merged video saved as: {self.output_path}")
 
         except Exception as e:
-            logging.error(f"Something went wrong: {e}")
+            logger.error(f"Something went wrong: {e}")
         finally:
             if os.path.exists(self.output_temp_path):
                 try:
                     shutil.rmtree(self.output_temp_path)
                 except OSError as e:
-                    logging.error(f"Unable to remove {self.output_temp_path} directory.")
+                    logger.error(f"Unable to remove {self.output_temp_path} directory.")
 
 def valid_url(url: str) -> bool:
     if url.startswith('https://baseballsavant.mlb.com/statcast_search'):

@@ -2,6 +2,9 @@ from pydantic import BaseModel, field_validator, Field, model_validator
 from typing import Literal
 from datetime import datetime, date
 from utils.helpers import player_name_to_id, player_position
+import logging
+
+logger = logging.getLogger(__name__)
     
 class SavantFilters(BaseModel):
     hfPT: list[str] = Field(default_factory=lambda: [])                 # Pitch type
@@ -56,7 +59,6 @@ class SavantFilters(BaseModel):
     @field_validator("hfSea", mode="before")
     @classmethod
     def validate_season(cls, v):
-        print("validating season")
         if not v or v == []:
             return ['2025']
 
@@ -68,27 +70,20 @@ class SavantFilters(BaseModel):
                     raise ValueError(f'Season {season} is not valid. Please enter a valid season')
             except (ValueError,TypeError):
                 raise ValueError() 
-        print("season success") 
         return v
 
     @field_validator("players_lookup", mode="after")
     @classmethod
     def names_to_ids(cls, player_names):
-        print(f"checking names: {player_names}")
         player_ids = []
         for player in player_names:
             player_ids.append(player_name_to_id(player))
-        print("player id success")
         return player_ids
 
     @field_validator("batters_lookup", "pitchers_lookup", mode="after")
     @classmethod
     def organize_players(cls, v, values):
-        print("organizing players by position")
-
         player_ids = values.data.get('players_lookup', [])
-
-        print(f"player ids: {player_ids}")
 
         if not player_ids:
             return []
@@ -104,10 +99,10 @@ class SavantFilters(BaseModel):
                 if current_field == 'batters_lookup' and position != 'Pitcher':
                     organized_players.append(player_id)
             except Exception as e:
-                print(f"There was an error getting a player position: {e}")
+                logger.error(f"There was an error getting a player position: {e}")
                 continue
 
-        print(f"organized {len(organized_players)} players into {current_field}")
+        logger.info(f"organized {len(organized_players)} players into {current_field}")
         return organized_players
 
     @model_validator(mode='after')
@@ -119,7 +114,7 @@ class SavantFilters(BaseModel):
                     first_player_position = player_position(first_player_id)
                     self.player_type = 'pitcher' if first_player_position == 'Pitcher' else 'batter'
                 except Exception as e:
-                    print(f"Error getting position for first player {first_player_id}: {e}")
+                    logger.error(f"Error getting position for first player {first_player_id}: {e}")
 
             # organize positions
             for player_id in self.players_lookup:

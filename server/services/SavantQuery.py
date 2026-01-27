@@ -1,5 +1,5 @@
 from pydantic_ai import Agent
-from models.custom_models import SavantFilters, Query, QueryResponse
+from models.schemas import SavantFilters, Query, QueryResponse
 from utils.helpers import open_md_file, construct_url
 from dotenv import load_dotenv
 

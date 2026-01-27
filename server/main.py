@@ -9,10 +9,16 @@ from slowapi.errors import RateLimitExceeded
 from limiter import limiter
 from utils.cleanup import cleanup_old_jobs
 import asyncio
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Creating database")
+    logging.info("Creating database")
     Base.metadata.create_all(bind=engine)
 
     cleanup_task = asyncio.create_task(cleanup_old_jobs())
