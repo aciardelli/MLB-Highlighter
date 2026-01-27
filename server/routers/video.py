@@ -10,7 +10,6 @@ from models.job import JobStatus
 import aiohttp
 import os
 from dotenv import load_dotenv
-import uuid
 from limiter import limiter, ai_limit
 
 load_dotenv('../.env')
@@ -125,7 +124,7 @@ async def process_video(url: str, output_path: str, job_id: str):
         store = JobStore(db)
         store.update_job_status(job_id, JobStatus.PROCESSING)
 
-        connector = aiohttp.TCPConnector(limit=0, limit_per_host=0)
+        connector = aiohttp.TCPConnector(limit=20, limit_per_host=10)
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
 
@@ -134,6 +133,9 @@ async def process_video(url: str, output_path: str, job_id: str):
             store.update_job_status(job_id, JobStatus.PARSING_PAGE)
             await ss.parse_savant_page(session)
             await ss.get_mp4_links(session)
+
+            if len(ss.video_data_list) > 100:
+                raise ValueError(f"Too many videos ({len(ss.video_data_list)}). Maximum is 100")
 
             sm = SavantMerger(ss.video_data_list, output_path)
             store.update_job_status(job_id, JobStatus.DOWNLOADING_VIDEOS)
@@ -145,6 +147,6 @@ async def process_video(url: str, output_path: str, job_id: str):
             store.update_job_status(job_id, JobStatus.COMPLETE, output_path)
     except Exception as e:
         print(f"Video processing failed: {e}")
-        store.update_job_status(job_id, JobStatus.FAILED)
+        store.update_job_status(job_id, JobStatus.FAILED, error_message=e)
     finally:
         db.close()

@@ -9,13 +9,13 @@ def open_md_file(filename):
 def player_name_to_id(player_name):
     if ',' in player_name:
         last, first = player_name.split(',',1)
-        last, first = last.strip(), first.strip()
-        player_df = playerid_lookup(last, first, fuzzy=True)
+        player_df = playerid_lookup(last.strip(), first.strip(), fuzzy=True)
     else:
-        player_df = playerid_lookup(player_name, fuzzy=True)
+        player_df = playerid_lookup(player_name.strip(), fuzzy=True)
 
     if not player_df.empty:
         for index, row in player_df.iterrows():
+            # TODO update this
             if str(int(row['mlb_played_last'])) == '2025':
                 player_id = str(player_df.iloc[index]['key_mlbam'])
                 return player_id

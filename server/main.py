@@ -7,12 +7,19 @@ from services.database import engine
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from limiter import limiter
+from utils.cleanup import cleanup_old_jobs
+import asyncio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Creating database")
     Base.metadata.create_all(bind=engine)
+
+    cleanup_task = asyncio.create_task(cleanup_old_jobs())
+    
     yield
+
+    cleanup_task.cancel()
 
 app = FastAPI(lifespan=lifespan)
 app.state.limiter = limiter
