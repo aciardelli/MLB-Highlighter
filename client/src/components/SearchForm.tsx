@@ -5,16 +5,16 @@ import type { ProcessQueryResponse, MergeQueryResponse, MergeUrlResponse } from 
 import { queryService } from '../api/queryService.ts';
 
 interface SearchFormProps {
+    onSubmitStart?: (query: string) => void;
     onResult?: (result: ProcessQueryResponse | MergeQueryResponse | MergeUrlResponse) => void;
     onError?: (error: string) => void;
     disabled?: boolean;
 }
 
-const SearchForm: FC<SearchFormProps> = ({ onResult, onError, disabled }) => {
-    const [inputMode, setInputMode] = useState<'url' | 'natural'>('url');
+const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, disabled }) => {
+    const [inputMode, setInputMode] = useState<'url' | 'natural'>('natural');
     const [inputValue, setInputValue] = useState('');
-    const [isLoading, setIsLoading] = useState(false); 
-    const [result, setResult] = useState<ProcessQueryResponse | null>(null)
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleModeChange = (mode: 'url' | 'natural') => {
         setInputMode(mode);
@@ -31,6 +31,7 @@ const SearchForm: FC<SearchFormProps> = ({ onResult, onError, disabled }) => {
         e.preventDefault();
         if (!inputValue.trim()) return;
 
+        onSubmitStart?.(inputValue);
         setIsLoading(true);
         try {
             const result = inputMode === 'url' 
@@ -38,7 +39,6 @@ const SearchForm: FC<SearchFormProps> = ({ onResult, onError, disabled }) => {
                 : await queryService.mergeFromQuery(inputValue);
             
             onResult?.(result);
-            setResult(result);
             console.log('API Result:', result);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -50,7 +50,7 @@ const SearchForm: FC<SearchFormProps> = ({ onResult, onError, disabled }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="w-full flex flex-col items-center space-y-4">
+        <form onSubmit={handleSubmit} className="w-full flex flex-col items-center space-y-6">
             <ToggleSwitch
                 onToggle={handleModeChange}
                 initialMode={inputMode}
@@ -60,17 +60,10 @@ const SearchForm: FC<SearchFormProps> = ({ onResult, onError, disabled }) => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
             />
-            {/* 
-            {result && 'filters' in result && (
-                <pre className="mt-4 p-4 bg-gray-100 rounded text-sm overflow-auto">
-                  {JSON.stringify(result.filters, null, 2)}
-                </pre>
-            )}
-            */}
             <button
                 type="submit"
                 disabled={isLoading || !inputValue.trim() || disabled}
-                className="px-6 py-3 bg-[#BF0D3E] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#A00B36] transition-colors duration-200"
+                className="px-8 py-3 bg-[#BF0D3E] text-white font-medium rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#a30c35] transition-all duration-200"
             >
                 {isLoading ? 'Searching...' : 'Search'}
             </button>

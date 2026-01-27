@@ -8,8 +8,8 @@ interface InputProps {
 
 const InputBox: FC<InputProps> = ({ placeholder, value, onChange }) => {
     return (
-        <input 
-            className="w-full px-6 py-4 bg-stone-100 border-2 border-[#BF0D3E] rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-[#BF0D3E] focus:border-[#BF0D3E] text-stone-900 placeholder-stone-500 transition-all duration-200 text-lg"
+        <input
+            className="w-full px-5 py-4 bg-neutral-800/50 border border-neutral-700/50 rounded-lg focus:outline-none focus:border-[#BF0D3E]/50 focus:ring-1 focus:ring-[#BF0D3E]/30 text-white placeholder-neutral-500 transition-all duration-200 text-lg"
             placeholder={placeholder}
             value={value}
             onChange={onChange}
