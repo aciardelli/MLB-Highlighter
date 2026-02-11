@@ -2,12 +2,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from routers import video
-from models.job import Base
-from services.database import engine
+from services.JobStore import job_store
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from limiter import limiter
-from utils.cleanup import cleanup_old_jobs
 import asyncio
 import logging
 
@@ -18,27 +16,22 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logging.info("Creating database")
-    Base.metadata.create_all(bind=engine)
-
-    cleanup_task = asyncio.create_task(cleanup_old_jobs())
-    
+    cleanup_task = asyncio.create_task(job_store.cleanup_old_jobs())
     yield
-
     cleanup_task.cancel()
 
 app = FastAPI(lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-origins = ["*"]
+origins = ["http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,          # Allows all origins
-    allow_credentials=True,         # Allows cookies/authorization headers to be sent
-    allow_methods=["*"],            # Allows all methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],            # Allows all headers
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(video.router, prefix="/video", tags=["video"])

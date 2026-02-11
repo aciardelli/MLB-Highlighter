@@ -4,6 +4,7 @@ import VideoDisplay from './VideoDisplay.tsx'
 import RequestStatus from './RequestStatus.tsx'
 import type { ProcessQueryResponse, MergeQueryResponse, MergeUrlResponse } from '../types/api.ts'
 import { queryService } from '../api/queryService.ts'
+import { streamJobStatus } from '../api/sseService.ts'
 
 type Phase = 'idle' | 'submitting' | 'polling' | 'complete' | 'error';
 
@@ -14,7 +15,9 @@ const MLBMerger = () => {
     const [jobStatus, setJobStatus] = useState<string>('pending');
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const eventSourceRef = useRef<EventSource | null>(null);
     const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const usingPollingRef = useRef(false);
 
     const handleSubmitStart = useCallback((submittedQuery: string) => {
         setPhase('submitting');
@@ -23,6 +26,7 @@ const MLBMerger = () => {
         setVideoUrl(null);
         setJobStatus('pending');
         setErrorMessage(null);
+        usingPollingRef.current = false;
     }, []);
 
     const handleResult = useCallback((result: ProcessQueryResponse | MergeQueryResponse | MergeUrlResponse) => {
@@ -37,12 +41,49 @@ const MLBMerger = () => {
         setPhase('error');
     }, []);
 
-    // Polling logic
+    // utilize sse but want to fallback to polling if needed
     useEffect(() => {
         if (phase !== 'polling' || !jobId) return;
 
+        // sse
+        if (!usingPollingRef.current) {
+            const es = streamJobStatus(jobId, {
+                onUpdate: (update) => {
+                    if (update.status === 'complete') {
+                        setVideoUrl('/api/video/stream/' + jobId);
+                        setPhase('complete');
+                    } else if (update.status === 'failed') {
+                        setErrorMessage(update.error_message || 'Job processing failed.');
+                        setPhase('error');
+                    } else {
+                        setJobStatus(update.status);
+                    }
+                },
+                onError: () => {
+                    usingPollingRef.current = true;
+                    startPolling(jobId);
+                },
+            });
+            eventSourceRef.current = es;
+
+            return () => {
+                es.close();
+            };
+        }
+
+        // polling fallback
+        startPolling(jobId);
+
+        return () => {
+            if (pollingRef.current) {
+                clearTimeout(pollingRef.current);
+            }
+        };
+    }, [phase, jobId]);
+
+    function startPolling(id: string) {
         const startTime = Date.now();
-        const MAX_POLLING_TIME = 60000;
+        const MAX_POLLING_TIME = 120000;
         const POLLING_INTERVAL = 2000;
 
         const pollStatus = async () => {
@@ -53,10 +94,10 @@ const MLBMerger = () => {
             }
 
             try {
-                const result = await queryService.getJobStatus(jobId);
+                const result = await queryService.getJobStatus(id);
 
                 if (result.status === 'complete') {
-                    setVideoUrl('/api/video/stream/' + jobId);
+                    setVideoUrl('/api/video/stream/' + id);
                     setPhase('complete');
                 } else if (result.status === 'failed') {
                     setErrorMessage(result.error_message || 'Job processing failed.');
@@ -72,13 +113,14 @@ const MLBMerger = () => {
         };
 
         pollStatus();
+    }
 
+    useEffect(() => {
         return () => {
-            if (pollingRef.current) {
-                clearTimeout(pollingRef.current);
-            }
+            eventSourceRef.current?.close();
+            if (pollingRef.current) clearTimeout(pollingRef.current);
         };
-    }, [phase, jobId]);
+    }, []);
 
     const isProcessing = phase === 'submitting' || phase === 'polling';
 
