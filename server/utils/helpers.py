@@ -1,12 +1,13 @@
 from pybaseball import playerid_lookup
 import pandas as pd
 import requests
+import asyncio
 
 def open_md_file(filename):
     with open(f'context/{filename}', 'r') as file:
         return file.read()
 
-def player_name_to_id(player_name):
+def convert_player_name_to_id(player_name):
     if ',' in player_name:
         last, first = player_name.split(',',1)
         player_df = playerid_lookup(last.strip(), first.strip(), fuzzy=True)
@@ -23,7 +24,7 @@ def player_name_to_id(player_name):
         player_id = str(player_df.iloc[0]['key_mlbam'])
         return player_id 
 
-def player_position(player_id):
+def get_player_position(player_id):
     url = f'https://statsapi.mlb.com/api/v1/people?personIds={player_id}&hydrate=currentTeam'
     response = requests.get(url).json()
 

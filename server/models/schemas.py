@@ -1,7 +1,7 @@
 from pydantic import BaseModel, field_validator, Field, model_validator
 from typing import Literal
 from datetime import datetime, date
-from utils.helpers import player_name_to_id, player_position
+from utils.helpers import convert_player_name_to_id, get_player_position
 import logging
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ class SavantFilters(BaseModel):
     def names_to_ids(cls, player_names):
         player_ids = []
         for player in player_names:
-            player_ids.append(player_name_to_id(player))
+            player_ids.append(convert_player_name_to_id(player))
         return player_ids
 
     @field_validator("batters_lookup", "pitchers_lookup", mode="after")
@@ -93,7 +93,7 @@ class SavantFilters(BaseModel):
 
         for player_id in player_ids:
             try:
-                position = player_position(player_id)
+                position = get_player_position(player_id)
                 if current_field == 'pitchers_lookup' and position == 'Pitcher':
                     organized_players.append(player_id)
                 if current_field == 'batters_lookup' and position != 'Pitcher':
@@ -111,14 +111,14 @@ class SavantFilters(BaseModel):
             # set focus player
             if first_player_id := self.players_lookup[0]:
                 try:
-                    first_player_position = player_position(first_player_id)
+                    first_player_position = get_player_position(first_player_id)
                     self.player_type = 'pitcher' if first_player_position == 'Pitcher' else 'batter'
                 except Exception as e:
                     logger.error(f"Error getting position for first player {first_player_id}: {e}")
 
             # organize positions
             for player_id in self.players_lookup:
-                position = player_position(player_id)
+                position = get_player_position(player_id)
                 if position == 'Pitcher':
                     self.pitchers_lookup.append(player_id)
                 else:
