@@ -1,31 +1,28 @@
 import { apiClient } from './client';
 import { ENDPOINTS } from './endpoints';
-import type { QueryRequest, ProcessQueryResponse, MergeUrlResponse, MergeQueryResponse, JobStatusResponse } from '../types/api';
+import type { QueryRequest, JobStatusResponse, StreamQueryResponse, StreamUrlResponse, DownloadResponse } from '../types/api';
 
-export const queryService = { 
-    processQuery: async (query: string): Promise<ProcessQueryResponse> => {
+export const queryService = {
+    streamFromQuery: async (query: string): Promise<StreamQueryResponse> => {
         const requestData: QueryRequest = { query };
-        const response = await apiClient.post<ProcessQueryResponse>(ENDPOINTS.PROCESS_QUERY, requestData);
+        const response = await apiClient.post<StreamQueryResponse>(ENDPOINTS.STREAM_QUERY, requestData);
         return response.data;
     },
 
-    mergeFromUrl: async (url: string): Promise<MergeUrlResponse> => {
-        const response = await apiClient.post<MergeUrlResponse>(ENDPOINTS.MERGE_URL, null, {
+    streamFromUrl: async (url: string): Promise<StreamUrlResponse> => {
+        const response = await apiClient.post<StreamUrlResponse>(ENDPOINTS.STREAM_URL, null, {
             params: { url }
         });
         return response.data;
     },
 
-    mergeFromQuery: async (query: string): Promise<MergeQueryResponse> => {
-        const requestData: QueryRequest = { query };
-        const response = await apiClient.post<MergeQueryResponse>(ENDPOINTS.MERGE_QUERY, requestData);
-        console.log("MERGING FROM QUERY")
+    downloadJob: async (jobId: string): Promise<DownloadResponse> => {
+        const response = await apiClient.post<DownloadResponse>(ENDPOINTS.DOWNLOAD_START + jobId);
         return response.data;
     },
 
     getJobStatus: async (jobId: string): Promise<JobStatusResponse> => {
         const response = await apiClient.get<JobStatusResponse>(ENDPOINTS.GET_JOB_STATUS + `${jobId}`);
-        console.log("GETTING JOB STATUS")
         return response.data;
     }
 };

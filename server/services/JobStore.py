@@ -18,6 +18,7 @@ class JobStore:
             "status": JobStatus.PENDING,
             "video_url": None,
             "error_message": None,
+            "video_data_list": [],
             "created_at": datetime.utcnow(),
             "queue": asyncio.Queue(),
         }
@@ -40,6 +41,32 @@ class JobStore:
             "video_url": video_url,
             "error_message": job["error_message"],
         })
+
+    def emit_video_url(self, job_id: str, url: str, index: int, metadata: dict):
+        job = self.get_job(job_id)
+        if not job:
+            return
+        job["queue"].put_nowait({
+            "type": "video_url",
+            "url": url,
+            "index": index,
+            "metadata": metadata,
+        })
+
+    def emit_complete(self, job_id: str, total: int):
+        job = self.get_job(job_id)
+        if not job:
+            return
+        job["queue"].put_nowait({
+            "type": "complete",
+            "total": total,
+        })
+
+    def store_video_data(self, job_id: str, video_data_list: list):
+        job = self.get_job(job_id)
+        if not job:
+            return
+        job["video_data_list"] = video_data_list
 
     async def cleanup_old_jobs(self):
         while True:

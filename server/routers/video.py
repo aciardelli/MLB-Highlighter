@@ -1,11 +1,11 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
-from services.SavantMerger import SavantMerger, SavantScraper, valid_url
+from services.SavantMerger import valid_url
 from services.SavantQuery import SavantQuery
 from services.JobStore import job_store
+from services.background_tasks import scrape_and_stream_urls, download_and_merge
 from models.schemas import Query
 from models.job import JobStatus
-import aiohttp
 import asyncio
 import json
 import os
@@ -21,10 +21,11 @@ BASE_OUTPUT_PATH = os.environ.get('BASE_OUTPUT_PATH')
 
 router = APIRouter()
 
-# SSE stream for job status
+# sse job status
 @router.get('/status/{job_id}/stream')
 @limiter.exempt
 async def stream_job_status(request: Request, job_id: str):
+    """event stream of the job's status'"""
     job = job_store.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -33,13 +34,22 @@ async def stream_job_status(request: Request, job_id: str):
         queue: asyncio.Queue = job["queue"]
         while True:
             update = await queue.get()
-            yield f"data: {json.dumps(update)}\n\n"
-            if update["status"] in (JobStatus.COMPLETE.value, JobStatus.FAILED.value):
+            msg_type = update.get("type")
+
+            if msg_type == "video_url":
+                yield f"event: video_url\ndata: {json.dumps(update)}\n\n"
+            elif msg_type == "complete":
+                yield f"event: complete\ndata: {json.dumps(update)}\n\n"
                 break
+            else:
+                # Legacy status messages (for download progress / old endpoints)
+                yield f"data: {json.dumps(update)}\n\n"
+                if update.get("status") in (JobStatus.COMPLETE.value, JobStatus.FAILED.value):
+                    break
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-# fallback job status (if SSE connection drops)
+# polling job status
 @router.get('/status/{job_id}')
 @limiter.exempt
 def get_job_status(request: Request, job_id: str):
@@ -53,8 +63,8 @@ def get_job_status(request: Request, job_id: str):
         "error_message": job["error_message"],
     }
 
-# serve the video
-@router.get('/stream/{job_id}')
+# download the merged videos
+@router.get('/download/merged/{job_id}')
 @limiter.exempt
 def stream_video(request: Request, job_id: str):
     job = job_store.get_job(job_id)
@@ -66,30 +76,10 @@ def stream_video(request: Request, job_id: str):
 
     return FileResponse(job["video_url"], media_type='video/mp4')
 
-# url merging
-@router.post('/merge-url')
+# query streaming
+@router.post('/stream-query')
 @limiter.limit("2/minute")
-def merge_from_url(request: Request, url: str, background_tasks: BackgroundTasks):
-    if not valid_url(url):
-        raise HTTPException(status_code=400, detail="Invalid Baseball Savant URL")
-
-    if not BASE_OUTPUT_PATH:
-        raise HTTPException(status_code=400, detail="Invalid output path specified")
-
-    job = job_store.create_job()
-    output_path = os.path.join(BASE_OUTPUT_PATH, f'{job["id"]}.mp4')
-
-    background_tasks.add_task(process_video, url, output_path, job["id"])
-
-    return {
-        "message": "Video processing started",
-        "job_id": job["id"],
-    }
-
-# natural language merging
-@router.post('/merge-query')
-@limiter.limit("2/minute")
-async def merge_from_query(request: Request, query: Query, background_tasks: BackgroundTasks):
+async def stream_from_query(request: Request, query: Query, background_tasks: BackgroundTasks):
     try:
         service = SavantQuery()
         result = await service.process_query(query)
@@ -99,63 +89,50 @@ async def merge_from_query(request: Request, query: Query, background_tasks: Bac
     if not valid_url(result.url):
         raise HTTPException(status_code=400, detail="Invalid Baseball Savant URL")
 
-    if not BASE_OUTPUT_PATH:
-        raise HTTPException(status_code=400, detail="Invalid output path specified")
-
     job = job_store.create_job()
-    output_path = os.path.join(BASE_OUTPUT_PATH, f"{job['id']}.mp4")
-
-    background_tasks.add_task(process_video, result.url, output_path, job["id"])
+    background_tasks.add_task(scrape_and_stream_urls, result.url, job["id"])
 
     return {
-        "message": "Video processing started",
-        "original_query": query.query,
+        "job_id": job["id"],
         "generated_url": result.url,
         "filter_display": result.filters.get_filter_display(),
+    }
+
+# url streaming
+@router.post('/stream-url')
+@limiter.limit("2/minute")
+def stream_from_url(request: Request, url: str, background_tasks: BackgroundTasks):
+    if not valid_url(url):
+        raise HTTPException(status_code=400, detail="Invalid Baseball Savant URL")
+
+    job = job_store.create_job()
+    background_tasks.add_task(scrape_and_stream_urls, url, job["id"])
+
+    return {
         "job_id": job["id"],
     }
 
-# url processing - this is for testing
-@router.post('/process-query')
+# start the download process
+@router.post('/download/start/{job_id}')
 @limiter.limit("2/minute")
-async def process_query(request: Request, query: Query):
-    try:
-        service = SavantQuery()
-        result = await service.process_query(query)
-        return {
-            "message": "Query processed successfully",
-            "original_query": query.query,
-            "generated_url": result.url,
-            "filter_display": result.filters.get_filter_display(),
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Query processing failed: {str(e)}")
+def download_merged(request: Request, job_id: str, background_tasks: BackgroundTasks):
+    job = job_store.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
 
-async def process_video(url: str, output_path: str, job_id: str):
-    try:
-        job_store.update_status(job_id, JobStatus.PROCESSING)
+    video_data_list = job.get("video_data_list", [])
+    if not video_data_list:
+        raise HTTPException(status_code=400, detail="No video data available for this job")
 
-        connector = aiohttp.TCPConnector(limit=20, limit_per_host=10)
-        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-        async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
+    if not BASE_OUTPUT_PATH:
+        raise HTTPException(status_code=400, detail="Invalid output path specified")
 
-            ss = SavantScraper(url)
+    download_job = job_store.create_job()
+    output_path = os.path.join(BASE_OUTPUT_PATH, f"{download_job['id']}.mp4")
 
-            job_store.update_status(job_id, JobStatus.PARSING_PAGE)
-            await ss.parse_savant_page(session)
-            await ss.get_mp4_links(session)
+    background_tasks.add_task(download_and_merge, video_data_list, output_path, download_job["id"])
 
-            if len(ss.video_data_list) > 100:
-                raise ValueError(f"Too many videos ({len(ss.video_data_list)}). Maximum is 100")
+    return {
+        "download_job_id": download_job["id"],
+    }
 
-            sm = SavantMerger(ss.video_data_list, output_path)
-            job_store.update_status(job_id, JobStatus.DOWNLOADING_VIDEOS)
-            await sm.download_videos(session)
-
-            job_store.update_status(job_id, JobStatus.MERGING_VIDEOS)
-            sm.merge_videos()
-
-            job_store.update_status(job_id, JobStatus.COMPLETE, output_path)
-    except Exception as e:
-        logger.error(f"Video processing failed: {e}")
-        job_store.update_status(job_id, JobStatus.FAILED, error_message=e)

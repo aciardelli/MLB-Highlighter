@@ -227,6 +227,50 @@ class SavantScraper:
         # makes videos chronological - TODO make a function for this
         self.video_data_list = self.video_data_list[::-1]
 
+    async def get_mp4_links_streaming(self, session: aiohttp.ClientSession, callback) -> None:
+        """Resolve mp4 links one at a time with limited concurrency, calling callback for each valid URL."""
+        semaphore = asyncio.Semaphore(3)
+
+        # Reverse for chronological order (same as get_mp4_links)
+        ordered_list = list(reversed(self.video_data_list))
+
+        async def fetch_and_emit(video_data: VideoMetadata, index: int):
+            async with semaphore:
+                try:
+                    soup = await self.load_page(session, video_data.video_page_url)
+                    if soup is None:
+                        logger.warning(f"Failed to load video page: {video_data.video_page_url}")
+                        return
+
+                    video_data.get_video_data(soup)
+
+                    video_element = soup.find('video')
+                    if not video_element:
+                        logger.warning(f"No video element found on page: {video_data.video_page_url}")
+                        return
+
+                    source_element = video_element.find('source')
+                    if not source_element:
+                        logger.warning(f"No source element found on page: {video_data.video_page_url}")
+                        return
+
+                    mp4_link = source_element.get('src')
+                    if not mp4_link:
+                        logger.warning(f"No mp4 link found on page: {video_data.video_page_url}")
+                        return
+
+                    video_data.mp4_video_url = str(mp4_link)
+                    await callback(video_data, index)
+                except Exception as e:
+                    logger.error(f"Error processing video: {video_data.video_page_url}: {e}")
+
+        tasks = [fetch_and_emit(vd, i) for i, vd in enumerate(ordered_list)]
+        await asyncio.gather(*tasks)
+
+        # Update video_data_list with valid results in chronological order
+        self.video_data_list = [vd for vd in ordered_list if vd.mp4_video_url]
+        logger.info(f"{len(self.video_data_list)} videos streamed successfully")
+
 ############ MERGER ############
 class SavantMerger:
     def __init__(self, video_data_list: List[VideoMetadata], output_path: str):

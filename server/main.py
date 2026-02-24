@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from routers import video
+from routers import video, video_testing
 from services.JobStore import job_store
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -35,6 +35,7 @@ app.add_middleware(
 )
 
 app.include_router(video.router, prefix="/video", tags=["video"])
+app.include_router(video_testing.router, prefix="/video/testing", tags=["testing"])
 
 @app.get("/health")
 @limiter.exempt

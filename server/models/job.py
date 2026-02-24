@@ -6,5 +6,6 @@ class JobStatus(str, Enum):
     DOWNLOADING_VIDEOS = "downloading"
     MERGING_VIDEOS = "merging"
     PROCESSING = "processing"
+    STREAMING_URLS = "streaming"
     COMPLETE = "complete"
     FAILED = "failed"

@@ -1,12 +1,12 @@
 import { type FC, useState } from 'react';
 import InputBox from './InputBox.tsx';
 import ToggleSwitch from './ToggleSwitch.tsx';
-import type { ProcessQueryResponse, MergeQueryResponse, MergeUrlResponse } from '../types/api.ts';
+import type { StreamQueryResponse, StreamUrlResponse } from '../types/api.ts';
 import { queryService } from '../api/queryService.ts';
 
 interface SearchFormProps {
     onSubmitStart?: (query: string) => void;
-    onResult?: (result: ProcessQueryResponse | MergeQueryResponse | MergeUrlResponse) => void;
+    onResult?: (result: StreamQueryResponse | StreamUrlResponse) => void;
     onError?: (error: string) => void;
     disabled?: boolean;
 }
@@ -34,12 +34,11 @@ const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, dis
         onSubmitStart?.(inputValue);
         setIsLoading(true);
         try {
-            const result = inputMode === 'url' 
-                ? await queryService.mergeFromUrl(inputValue)
-                : await queryService.mergeFromQuery(inputValue);
+            const result = inputMode === 'url'
+                ? await queryService.streamFromUrl(inputValue)
+                : await queryService.streamFromQuery(inputValue);
             
             onResult?.(result);
-            console.log('API Result:', result);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             console.error('API Error:', error);

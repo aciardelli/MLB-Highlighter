@@ -1,6 +1,6 @@
 import { type FC } from 'react';
 
-type Phase = 'idle' | 'submitting' | 'polling' | 'complete' | 'error';
+type Phase = 'idle' | 'submitting' | 'streaming' | 'stream-complete' | 'complete' | 'error';
 
 interface RequestStatusProps {
     phase: Phase;
@@ -12,6 +12,7 @@ interface RequestStatusProps {
 const STATUS_MAPPING: Record<string, string> = {
     pending: "Processing request...",
     parsing: "Parsing Baseball Savant...",
+    streaming: "Loading video clips...",
     downloading: "Downloading videos...",
     merging: "Merging videos...",
     processing: "Processing request...",
