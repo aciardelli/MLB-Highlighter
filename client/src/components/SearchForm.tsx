@@ -55,18 +55,21 @@ const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, dis
                 onToggle={handleModeChange}
                 initialMode={inputMode}
             />
-            <InputBox
-                placeholder={getPlaceholder()}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-            />
-            <button
-                type="submit"
-                disabled={isLoading || !inputValue.trim() || disabled}
-                className="px-8 py-3 bg-[#BF0D3E] text-white font-medium rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#a30c35] transition-all duration-200"
-            >
-                {isLoading ? 'Searching...' : 'Search'}
-            </button>
+            <div className="w-full flex">
+                <InputBox
+                    placeholder={getPlaceholder()}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    className="flex-1 rounded-r-none border-r-0"
+                />
+                <button
+                    type="submit"
+                    disabled={isLoading || !inputValue.trim() || disabled}
+                    className="px-8 py-3 bg-[#BF0D3E] text-white font-medium rounded-l-none rounded-r-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#a30c35] transition-all duration-200 text-lg"
+                >
+                    {isLoading ? 'Searching...' : 'Search'}
+                </button>
+            </div>
         </form>
     )
 }

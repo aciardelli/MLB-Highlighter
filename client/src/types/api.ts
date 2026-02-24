@@ -13,11 +13,13 @@ export interface MergeUrlResponse {
   job_id: string;
 }
 
+export type FilterDisplay = Record<string, string | string[]>;
+
 export interface MergeQueryResponse {
   message: string;
   original_query: string;
   generated_url: string;
-  filters: Record<string, unknown>;
+  filter_display: FilterDisplay;
   job_id: string;
 }
 
@@ -25,6 +27,6 @@ export interface ProcessQueryResponse {
   message: string;
   original_query: string;
   generated_url: string;
-  filters: Record<string, unknown>;
+  filter_display: FilterDisplay;
 }
 

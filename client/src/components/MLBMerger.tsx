@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import SearchForm from './SearchForm.tsx'
 import VideoDisplay from './VideoDisplay.tsx'
 import RequestStatus from './RequestStatus.tsx'
-import type { ProcessQueryResponse, MergeQueryResponse, MergeUrlResponse } from '../types/api.ts'
+import FilterDisplay from './FilterDisplay.tsx'
+import type { ProcessQueryResponse, MergeQueryResponse, MergeUrlResponse, FilterDisplay as FilterDisplayType } from '../types/api.ts'
 import { queryService } from '../api/queryService.ts'
 import { streamJobStatus } from '../api/sseService.ts'
 
@@ -15,6 +16,8 @@ const MLBMerger = () => {
     const [jobStatus, setJobStatus] = useState<string>('pending');
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [filters, setFilters] = useState<FilterDisplayType | null>(null);
+    const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
     const eventSourceRef = useRef<EventSource | null>(null);
     const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const usingPollingRef = useRef(false);
@@ -26,11 +29,17 @@ const MLBMerger = () => {
         setVideoUrl(null);
         setJobStatus('pending');
         setErrorMessage(null);
+        setFilters(null);
+        setGeneratedUrl(null);
         usingPollingRef.current = false;
     }, []);
 
     const handleResult = useCallback((result: ProcessQueryResponse | MergeQueryResponse | MergeUrlResponse) => {
-        if (result && 'job_id' in result) {
+        if ('filter_display' in result) {
+            setFilters(result.filter_display);
+            setGeneratedUrl(result.generated_url);
+        }
+        if ('job_id' in result) {
             setJobId(result.job_id);
             setPhase('polling');
         }
@@ -134,6 +143,9 @@ const MLBMerger = () => {
                     disabled={isProcessing}
                 />
             </div>
+            {filters && (
+                <FilterDisplay filters={filters} generatedUrl={generatedUrl} />
+            )}
             {phase !== 'idle' && (
                 <div>
                     {phase === 'complete' && videoUrl ? (

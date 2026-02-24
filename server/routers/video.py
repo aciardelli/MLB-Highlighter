@@ -111,7 +111,7 @@ async def merge_from_query(request: Request, query: Query, background_tasks: Bac
         "message": "Video processing started",
         "original_query": query.query,
         "generated_url": result.url,
-        "filters": result.filters,
+        "filter_display": result.filters.get_filter_display(),
         "job_id": job["id"],
     }
 
@@ -126,7 +126,7 @@ async def process_query(request: Request, query: Query):
             "message": "Query processed successfully",
             "original_query": query.query,
             "generated_url": result.url,
-            "filters": result.filters,
+            "filter_display": result.filters.get_filter_display(),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query processing failed: {str(e)}")

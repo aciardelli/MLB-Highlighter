@@ -46,6 +46,7 @@ class SavantFilters(BaseModel):
     players_lookup: list[str] = Field(default_factory=lambda: [], description="player names; formatted last,first if possible")
     batters_lookup: list[str] = Field(default_factory=lambda: [])
     pitchers_lookup: list[str] = Field(default_factory=lambda: [])
+    player_names_display: list[str] = Field(default_factory=lambda: [], exclude=True)
 
     metric_1: str = ''                                                  # Metric 1
     group_by: str = 'name'                                              # Group by
@@ -56,6 +57,21 @@ class SavantFilters(BaseModel):
     player_event_sort: str = 'api_p_release_speed'                      # Player event sort
     sort_order: str = 'desc'                                            # Sort order
     
+    @model_validator(mode='before')
+    @classmethod
+    def capture_player_names(cls, data):
+        if isinstance(data, dict):
+            raw_names = data.get('players_lookup', [])
+            display_names = []
+            for name in raw_names:
+                if ',' in name:
+                    parts = name.split(',', 1)
+                    display_names.append(f"{parts[1].strip()} {parts[0].strip()}")
+                else:
+                    display_names.append(name.strip())
+            data['player_names_display'] = display_names
+        return data
+
     @field_validator("hfSea", mode="before")
     @classmethod
     def validate_season(cls, v):
@@ -123,8 +139,39 @@ class SavantFilters(BaseModel):
                     self.pitchers_lookup.append(player_id)
                 else:
                     self.batters_lookup.append(player_id)
-        
+
         return self
+
+    def get_filter_display(self) -> dict:
+        EXCLUDED_FIELDS = {
+            'batters_lookup', 'pitchers_lookup', 'player_names_display',
+            'metric_1', 'group_by', 'min_pas', 'min_pitches',
+            'sort_col', 'min_results', 'player_event_sort', 'sort_order',
+        }
+        ALWAYS_INCLUDED = {'players_lookup', 'hfSea', 'hfAB'}
+
+        defaults = SavantFilters.model_construct()
+        display: dict = {}
+
+        # Always include players_lookup with display names
+        display['players_lookup'] = self.player_names_display
+
+        # Always include hfSea and hfAB
+        display['hfSea'] = self.hfSea
+        display['hfAB'] = self.hfAB
+
+        # Conditionally include other fields that differ from defaults
+        for field_name, field_info in self.model_fields.items():
+            if field_name in ALWAYS_INCLUDED or field_name in EXCLUDED_FIELDS:
+                continue
+
+            current_value = getattr(self, field_name)
+            default_value = getattr(defaults, field_name, None)
+
+            if current_value != default_value:
+                display[field_name] = current_value
+
+        return display
 
 class Query(BaseModel):
     query: str
