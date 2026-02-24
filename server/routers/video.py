@@ -4,7 +4,7 @@ from services.SavantMerger import valid_url
 from services.SavantQuery import SavantQuery
 from services.JobStore import job_store
 from services.background_tasks import scrape_and_stream_urls, download_and_merge
-from models.schemas import Query
+from models.query import Query
 from models.job import JobStatus
 import asyncio
 import json

@@ -1,11 +1,11 @@
 from pydantic import BaseModel, field_validator, Field, model_validator
 from typing import Literal
-from datetime import datetime, date
+from datetime import datetime
 from utils.helpers import convert_player_name_to_id, get_player_position
 import logging
 
 logger = logging.getLogger(__name__)
-    
+
 class SavantFilters(BaseModel):
     hfPT: list[str] = Field(default_factory=lambda: [])                 # Pitch type
     hfPR: list[str] = Field(default_factory=lambda: [])                 # Pitch result
@@ -13,7 +13,7 @@ class SavantFilters(BaseModel):
     hfC: list[str] = Field(default_factory=lambda: [])                  # Count
     player_type: Literal[
     'pitcher', 'batter', 'fielder_2', 'fielder_3', 'fielder_4',
-    'fielder_5', 'fielder_6', 'fielder_7', 'fielder_8', 'fielder_9' 
+    'fielder_5', 'fielder_6', 'fielder_7', 'fielder_8', 'fielder_9'
     ] = 'pitcher'                                                       # Player type
     pitcher_throws: str = ''                                            # Pitcher handedness
     game_date_gt: str = '' # date | None = None                                    # Game date greater than
@@ -56,7 +56,7 @@ class SavantFilters(BaseModel):
     min_results: str = '0'                                              # Minimum results
     player_event_sort: str = 'api_p_release_speed'                      # Player event sort
     sort_order: str = 'desc'                                            # Sort order
-    
+
     @model_validator(mode='before')
     @classmethod
     def capture_player_names(cls, data):
@@ -85,7 +85,7 @@ class SavantFilters(BaseModel):
                 if year < 2008 or year > current_year:
                     raise ValueError(f'Season {season} is not valid. Please enter a valid season')
             except (ValueError,TypeError):
-                raise ValueError() 
+                raise ValueError()
         return v
 
     @field_validator("players_lookup", mode="after")
@@ -172,11 +172,3 @@ class SavantFilters(BaseModel):
                 display[field_name] = current_value
 
         return display
-
-class Query(BaseModel):
-    query: str
-
-class QueryResponse(BaseModel):
-    filters: SavantFilters
-    url: str
-
