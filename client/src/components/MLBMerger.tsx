@@ -8,9 +8,13 @@ import type { StreamResponse, FilterDisplay as FilterDisplayType, VideoClip } fr
 import { queryService } from '../api/queryService.ts'
 import { streamJobStatus, streamClipUrls } from '../api/sseService.ts'
 
-type Phase = 'idle' | 'submitting' | 'streaming' | 'stream-complete' | 'complete' | 'error';
+export type Phase = 'idle' | 'submitting' | 'streaming' | 'stream-complete' | 'complete' | 'error';
 
-const MLBMerger = () => {
+interface MLBMergerProps {
+    onPhaseChange?: (phase: Phase) => void;
+}
+
+const MLBMerger = ({ onPhaseChange }: MLBMergerProps) => {
     const [phase, setPhase] = useState<Phase>('idle');
     const [query, setQuery] = useState<string | null>(null);
     const [jobId, setJobId] = useState<string | null>(null);
@@ -125,6 +129,11 @@ const MLBMerger = () => {
         }
     }, [jobId, isDownloading]);
 
+    // Notify parent of phase changes
+    useEffect(() => {
+        onPhaseChange?.(phase);
+    }, [phase, onPhaseChange]);
+
     // Cleanup on unmount
     useEffect(() => {
         return () => {
@@ -137,7 +146,7 @@ const MLBMerger = () => {
     const showPlaylist = (phase === 'streaming' || phase === 'stream-complete') && clips.length > 0;
 
     return (
-        <div className="flex justify-center flex-col gap-6">
+        <div className="flex flex-col gap-6">
             <div>
                 <SearchForm
                     onSubmitStart={handleSubmitStart}
