@@ -4,7 +4,7 @@ from services.SavantMerger import valid_url
 from services.SavantQuery import SavantQuery
 from services.JobStore import job_store
 from services.background_tasks import scrape_and_stream_urls, download_and_merge
-from models.query import Query
+from models.query import Query, SearchRequest
 from models.job import JobStatus
 import asyncio
 import json
@@ -76,13 +76,19 @@ def stream_video(request: Request, job_id: str):
 
     return FileResponse(job["video_url"], media_type='video/mp4')
 
-# query streaming
-@router.post('/stream-query')
+# detect url vs natural language
+@router.post('/stream')
 @limiter.limit("2/minute")
-async def stream_from_query(request: Request, query: Query, background_tasks: BackgroundTasks):
+async def stream_search(request: Request, body: SearchRequest, background_tasks: BackgroundTasks):
+    if valid_url(body.input):
+        url = body.input
+        job = job_store.create_job()
+        background_tasks.add_task(scrape_and_stream_urls, url, job["id"])
+        return {"job_id": job["id"]}
+
     try:
         service = SavantQuery()
-        result = await service.process_query(query)
+        result = await service.process_query(Query(query=body.input))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query processing failed: {str(e)}")
 
@@ -96,20 +102,6 @@ async def stream_from_query(request: Request, query: Query, background_tasks: Ba
         "job_id": job["id"],
         "generated_url": result.url,
         "filter_display": result.filters.get_filter_display(),
-    }
-
-# url streaming
-@router.post('/stream-url')
-@limiter.limit("2/minute")
-def stream_from_url(request: Request, url: str, background_tasks: BackgroundTasks):
-    if not valid_url(url):
-        raise HTTPException(status_code=400, detail="Invalid Baseball Savant URL")
-
-    job = job_store.create_job()
-    background_tasks.add_task(scrape_and_stream_urls, url, job["id"])
-
-    return {
-        "job_id": job["id"],
     }
 
 # start the download process

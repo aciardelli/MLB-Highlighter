@@ -1,5 +1,5 @@
-export interface QueryRequest {
-  query: string;
+export interface SearchRequest {
+  input: string;
 }
 
 export interface JobStatusResponse {
@@ -28,14 +28,10 @@ export interface VideoClip {
   metadata: VideoClipMetadata;
 }
 
-export interface StreamQueryResponse {
+export interface StreamResponse {
   job_id: string;
-  generated_url: string;
-  filter_display: FilterDisplay;
-}
-
-export interface StreamUrlResponse {
-  job_id: string;
+  generated_url?: string;
+  filter_display?: FilterDisplay;
 }
 
 export interface DownloadResponse {

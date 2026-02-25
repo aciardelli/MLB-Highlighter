@@ -4,7 +4,7 @@ import VideoDisplay from './VideoDisplay.tsx'
 import VideoPlaylist from './VideoPlaylist.tsx'
 import RequestStatus from './RequestStatus.tsx'
 import FilterDisplay from './FilterDisplay.tsx'
-import type { StreamQueryResponse, StreamUrlResponse, FilterDisplay as FilterDisplayType, VideoClip } from '../types/api.ts'
+import type { StreamResponse, FilterDisplay as FilterDisplayType, VideoClip } from '../types/api.ts'
 import { queryService } from '../api/queryService.ts'
 import { streamJobStatus, streamClipUrls } from '../api/sseService.ts'
 
@@ -42,10 +42,10 @@ const MLBMerger = () => {
         setIsDownloading(false);
     }, []);
 
-    const handleResult = useCallback((result: StreamQueryResponse | StreamUrlResponse) => {
-        if ('filter_display' in result) {
+    const handleResult = useCallback((result: StreamResponse) => {
+        if (result.filter_display) {
             setFilters(result.filter_display);
-            setGeneratedUrl(result.generated_url);
+            setGeneratedUrl(result.generated_url ?? null);
         }
         if ('job_id' in result) {
             setJobId(result.job_id);

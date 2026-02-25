@@ -7,3 +7,6 @@ class Query(BaseModel):
 class QueryResponse(BaseModel):
     filters: SavantFilters
     url: str
+
+class SearchRequest(BaseModel):
+    input: str

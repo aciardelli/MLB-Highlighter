@@ -1,18 +1,11 @@
 import { apiClient } from './client';
 import { ENDPOINTS } from './endpoints';
-import type { QueryRequest, JobStatusResponse, StreamQueryResponse, StreamUrlResponse, DownloadResponse } from '../types/api';
+import type { SearchRequest, JobStatusResponse, StreamResponse, DownloadResponse } from '../types/api';
 
 export const queryService = {
-    streamFromQuery: async (query: string): Promise<StreamQueryResponse> => {
-        const requestData: QueryRequest = { query };
-        const response = await apiClient.post<StreamQueryResponse>(ENDPOINTS.STREAM_QUERY, requestData);
-        return response.data;
-    },
-
-    streamFromUrl: async (url: string): Promise<StreamUrlResponse> => {
-        const response = await apiClient.post<StreamUrlResponse>(ENDPOINTS.STREAM_URL, null, {
-            params: { url }
-        });
+    search: async (input: string): Promise<StreamResponse> => {
+        const requestData: SearchRequest = { input };
+        const response = await apiClient.post<StreamResponse>(ENDPOINTS.STREAM, requestData);
         return response.data;
     },
 

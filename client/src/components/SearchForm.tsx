@@ -1,31 +1,18 @@
 import { type FC, useState } from 'react';
 import InputBox from './InputBox.tsx';
-import ToggleSwitch from './ToggleSwitch.tsx';
-import type { StreamQueryResponse, StreamUrlResponse } from '../types/api.ts';
+import type { StreamResponse } from '../types/api.ts';
 import { queryService } from '../api/queryService.ts';
 
 interface SearchFormProps {
     onSubmitStart?: (query: string) => void;
-    onResult?: (result: StreamQueryResponse | StreamUrlResponse) => void;
+    onResult?: (result: StreamResponse) => void;
     onError?: (error: string) => void;
     disabled?: boolean;
 }
 
 const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, disabled }) => {
-    const [inputMode, setInputMode] = useState<'url' | 'natural'>('natural');
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-
-    const handleModeChange = (mode: 'url' | 'natural') => {
-        setInputMode(mode);
-        setInputValue('');
-    };
-
-    const getPlaceholder = () => {
-        return inputMode === 'url'
-        ? 'Enter a URL (e.g., https://baseballsavant.mlb.com/...)'
-        : 'Describe what you\'re looking for (e.g., "Aaron Judge home runs")';
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,10 +21,7 @@ const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, dis
         onSubmitStart?.(inputValue);
         setIsLoading(true);
         try {
-            const result = inputMode === 'url'
-                ? await queryService.streamFromUrl(inputValue)
-                : await queryService.streamFromQuery(inputValue);
-            
+            const result = await queryService.search(inputValue);
             onResult?.(result);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -50,13 +34,9 @@ const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, dis
 
     return (
         <form onSubmit={handleSubmit} className="w-full flex flex-col items-center space-y-6">
-            <ToggleSwitch
-                onToggle={handleModeChange}
-                initialMode={inputMode}
-            />
             <div className="w-full flex">
                 <InputBox
-                    placeholder={getPlaceholder()}
+                    placeholder='Search for plays (e.g., "Aaron Judge home runs" or paste a Baseball Savant URL)'
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     className="flex-1 rounded-r-none border-r-0"
