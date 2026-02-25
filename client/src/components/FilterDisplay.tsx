@@ -54,7 +54,7 @@ const FilterDisplay: FC<FilterDisplayProps> = ({ filters, generatedUrl }) => {
         return values.map((v, i) => (
             <span
                 key={i}
-                className="inline-block px-3 py-0.5 text-sm bg-[#BF0D3E]/15 text-[#BF0D3E] border border-[#BF0D3E]/20 rounded-full"
+                className="inline-block px-3 py-0.5 text-sm bg-neutral-700/60 text-neutral-200 border border-neutral-600/50 rounded-full"
             >
                 {v}
             </span>
@@ -63,7 +63,7 @@ const FilterDisplay: FC<FilterDisplayProps> = ({ filters, generatedUrl }) => {
 
     return (
         <div className="bg-neutral-800/30 border border-neutral-700/50 rounded-lg p-4">
-            <div className="flex flex-wrap gap-x-6 gap-y-3">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 {entries.map(([key, value]) => (
                     <div key={key} className="flex items-center gap-2">
                         <span className="text-sm text-neutral-500">{FILTER_LABELS[key] ?? key}</span>
@@ -72,19 +72,17 @@ const FilterDisplay: FC<FilterDisplayProps> = ({ filters, generatedUrl }) => {
                         </div>
                     </div>
                 ))}
-            </div>
-            {generatedUrl && (
-                <div className="mt-3 pt-3 border-t border-neutral-700/50">
+                {generatedUrl && (
                     <a
                         href={generatedUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-[#BF0D3E] hover:text-[#a30c35] transition-colors duration-200"
                     >
-                        View on Baseball Savant &rarr;
+                        Savant URL &rarr;
                     </a>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };
