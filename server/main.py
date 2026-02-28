@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 from routers import video, video_testing
 from services.JobStore import job_store
 from slowapi import _rate_limit_exceeded_handler
@@ -8,6 +9,9 @@ from slowapi.errors import RateLimitExceeded
 from limiter import limiter
 import asyncio
 import logging
+import os
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,6 +30,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
     "https://savant-search.vercel.app",
 ]
 
@@ -53,3 +59,8 @@ async def root(request: Request):
     return {
         "message": "Hello world"
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
