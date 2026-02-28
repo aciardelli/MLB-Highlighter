@@ -33,6 +33,7 @@ origins = [
     "http://localhost:3001",
     "http://localhost:3002",
     "https://savant-search.vercel.app",
+    "https://www.mlbhighlighter.com",
 ]
 
 app.add_middleware(
