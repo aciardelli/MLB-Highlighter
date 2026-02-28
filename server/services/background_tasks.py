@@ -1,4 +1,6 @@
-from services.SavantMerger import SavantMerger, SavantScraper, VideoMetadata
+from services.SavantMerger import SavantMerger
+from services.SavantScraper import SavantScraper
+from services.VideoMetadata import VideoMetadata
 from services.JobStore import job_store
 from models.job import JobStatus
 import aiohttp

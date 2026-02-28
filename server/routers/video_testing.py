@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from services.SavantMerger import valid_url
+from services.SavantScraper import valid_url
 from services.SavantQuery import SavantQuery
 from models.query import Query
 from limiter import limiter
