@@ -48,6 +48,9 @@ class SavantMerger:
 
         self.temp_files = [f for f in self.temp_files if f is not None]
 
+        if not self.temp_files:
+            raise RuntimeError("All video downloads failed — no files to merge")
+
     # merge downloaded videos
     def merge_videos(self) -> None:
         logger.info("Merging videos...")
@@ -72,7 +75,8 @@ class SavantMerger:
             logger.info(f"Merged video saved as: {self.output_path}")
 
         except Exception as e:
-            logger.error(f"Something went wrong: {e}")
+            logger.error(f"FFmpeg merge failed: {e}")
+            raise
         finally:
             if os.path.exists(self.output_temp_path):
                 try:

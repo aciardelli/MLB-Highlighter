@@ -37,17 +37,16 @@ const FILTER_LABELS: Record<string, string> = {
 
 interface FilterDisplayProps {
     filters: FilterDisplayType;
-    generatedUrl?: string | null;
 }
 
-const FilterDisplay: FC<FilterDisplayProps> = ({ filters, generatedUrl }) => {
+const FilterDisplay: FC<FilterDisplayProps> = ({ filters }) => {
     const entries = Object.entries(filters).filter(([, value]) => {
         if (value === null || value === undefined || value === '') return false;
         if (Array.isArray(value) && value.length === 0) return false;
         return true;
     });
 
-    if (entries.length === 0 && !generatedUrl) return null;
+    if (entries.length === 0) return null;
 
     const renderValue = (value: string | string[]) => {
         const values = Array.isArray(value) ? value : [value];
@@ -72,16 +71,6 @@ const FilterDisplay: FC<FilterDisplayProps> = ({ filters, generatedUrl }) => {
                         </div>
                     </div>
                 ))}
-                {generatedUrl && (
-                    <a
-                        href={generatedUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-[#BF0D3E] hover:text-[#a30c35] transition-colors duration-200"
-                    >
-                        Savant URL &rarr;
-                    </a>
-                )}
             </div>
         </div>
     );

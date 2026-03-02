@@ -5,8 +5,7 @@ import VideoPlaylist from './VideoPlaylist.tsx'
 import RequestStatus from './RequestStatus.tsx'
 import FilterDisplay from './FilterDisplay.tsx'
 import type { StreamResponse, FilterDisplay as FilterDisplayType, VideoClip } from '../types/api.ts'
-import { queryService } from '../api/queryService.ts'
-import { streamJobStatus, streamClipUrls } from '../api/sseService.ts'
+import { streamClipUrls } from '../api/sseService.ts'
 
 export type Phase = 'idle' | 'submitting' | 'streaming' | 'stream-complete' | 'complete' | 'error';
 
@@ -27,10 +26,8 @@ const MLBMerger = ({ onPhaseChange }: MLBMergerProps) => {
     // Streaming state
     const [clips, setClips] = useState<VideoClip[]>([]);
     const [streamComplete, setStreamComplete] = useState(false);
-    const [isDownloading, setIsDownloading] = useState(false);
 
     const eventSourceRef = useRef<EventSource | null>(null);
-    const downloadEventSourceRef = useRef<EventSource | null>(null);
 
     const handleSubmitStart = useCallback((submittedQuery: string) => {
         setPhase('submitting');
@@ -43,7 +40,6 @@ const MLBMerger = ({ onPhaseChange }: MLBMergerProps) => {
         setGeneratedUrl(null);
         setClips([]);
         setStreamComplete(false);
-        setIsDownloading(false);
     }, []);
 
     const handleResult = useCallback((result: StreamResponse) => {
@@ -95,40 +91,6 @@ const MLBMerger = ({ onPhaseChange }: MLBMergerProps) => {
         };
     }, [phase, jobId]);
 
-    // Download handler: merge on server, then download file
-    const handleDownload = useCallback(async () => {
-        if (!jobId || isDownloading) return;
-
-        setIsDownloading(true);
-        try {
-            const result = await queryService.downloadJob(jobId);
-
-            const es = streamJobStatus(result.download_job_id, {
-                onUpdate: (update) => {
-                    if (update.status === 'complete') {
-                        const downloadUrl = `/api/video/download/merged/${result.download_job_id}`;
-                        const a = document.createElement('a');
-                        a.href = downloadUrl;
-                        a.download = 'merged_video.mp4';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        setIsDownloading(false);
-                    } else if (update.status === 'failed') {
-                        setIsDownloading(false);
-                    }
-                },
-                onError: () => {
-                    setIsDownloading(false);
-                },
-            });
-
-            downloadEventSourceRef.current = es;
-        } catch {
-            setIsDownloading(false);
-        }
-    }, [jobId, isDownloading]);
-
     // Notify parent of phase changes
     useEffect(() => {
         onPhaseChange?.(phase);
@@ -138,7 +100,6 @@ const MLBMerger = ({ onPhaseChange }: MLBMergerProps) => {
     useEffect(() => {
         return () => {
             eventSourceRef.current?.close();
-            downloadEventSourceRef.current?.close();
         };
     }, []);
 
@@ -156,7 +117,7 @@ const MLBMerger = ({ onPhaseChange }: MLBMergerProps) => {
                 />
             </div>
             {filters && (
-                <FilterDisplay filters={filters} generatedUrl={generatedUrl} />
+                <FilterDisplay filters={filters} />
             )}
             {phase !== 'idle' && (
                 <div>
@@ -164,8 +125,7 @@ const MLBMerger = ({ onPhaseChange }: MLBMergerProps) => {
                         <VideoPlaylist
                             clips={clips}
                             streamComplete={streamComplete}
-                            onDownload={handleDownload}
-                            isDownloading={isDownloading}
+                            generatedUrl={generatedUrl}
                         />
                     ) : phase === 'complete' && videoUrl ? (
                         <VideoDisplay videoUrl={videoUrl} />
