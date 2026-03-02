@@ -2,6 +2,7 @@ from services.SavantMerger import SavantMerger
 from services.SavantScraper import SavantScraper
 from services.VideoMetadata import VideoMetadata
 from services.JobStore import job_store
+from services.GameService import fetch_game_plays, get_sporty_video_url
 from models.job import JobStatus
 import aiohttp
 import logging
@@ -52,6 +53,51 @@ async def scrape_and_stream_urls(url: str, job_id: str):
     except Exception as e:
         logger.error(f"Streaming scrape failed: {e}")
         job_store.update_status(job_id, JobStatus.FAILED, error_message=e)
+
+async def stream_game_highlights(plays: list[dict], job_id: str):
+    """Resolve sporty-video pages for game plays and stream mp4 URLs via SSE."""
+    try:
+        job_store.update_status(job_id, JobStatus.STREAMING_URLS)
+
+        # Build a lookup from video page URL to play metadata
+        play_metadata = {}
+        scraper = SavantScraper("")
+        for play in plays:
+            video_page_url = get_sporty_video_url(play["play_id"])
+            scraper.video_data_list.append(VideoMetadata(video_page_url=video_page_url))
+            play_metadata[video_page_url] = {
+                "inning": play.get("inning"),
+                "half_inning": play.get("half_inning"),
+                "event": play.get("event"),
+                "description": play.get("description"),
+            }
+
+        connector = aiohttp.TCPConnector(limit=20, limit_per_host=10)
+        async with aiohttp.ClientSession(connector=connector, headers=AIOHTTP_HEADERS) as session:
+            async def on_url_resolved(video_data: VideoMetadata, index: int):
+                metadata = {
+                    "batter": video_data.batter,
+                    "pitcher": video_data.pitcher,
+                    "pitch_type": video_data.pitch_type,
+                    "pitch_velo": video_data.pitch_velo,
+                    "exit_velo": video_data.exit_velo,
+                    "distance": video_data.distance,
+                    "date": video_data.date,
+                    "matchup": video_data.matchup,
+                    "count": video_data.count,
+                    **play_metadata.get(video_data.video_page_url, {}),
+                }
+                job_store.emit_video_url(job_id, video_data.mp4_video_url, index, metadata)
+
+            await scraper.get_mp4_links_streaming(session, on_url_resolved, reverse=False)
+
+            job_store.store_video_data(job_id, scraper.video_data_list)
+            job_store.emit_complete(job_id, len(scraper.video_data_list))
+
+    except Exception as e:
+        logger.error(f"Game highlights streaming failed: {e}")
+        job_store.update_status(job_id, JobStatus.FAILED, error_message=e)
+
 
 async def download_and_merge(video_data_list: list[VideoMetadata], output_path: str, job_id: str):
     try:

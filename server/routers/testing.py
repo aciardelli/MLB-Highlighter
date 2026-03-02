@@ -8,7 +8,8 @@ router = APIRouter()
 
 @router.post('/process-query')
 @limiter.limit("2/minute")
-async def process_query(request: Request, query: Query):
+async def test_process_query(request: Request, query: Query):
+    """Test endpoint: process a natural language query into a Savant URL."""
     try:
         service = SavantQuery()
         result = await service.process_query(query)
@@ -21,9 +22,11 @@ async def process_query(request: Request, query: Query):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query processing failed: {str(e)}")
 
+
 @router.post('/process-url')
 @limiter.limit("2/minute")
-async def process_url(request: Request, url: str):
+async def test_process_url(request: Request, url: str):
+    """Test endpoint: validate a Baseball Savant URL."""
     if not valid_url(url):
         raise HTTPException(status_code=400, detail="Invalid Baseball Savant URL")
 
