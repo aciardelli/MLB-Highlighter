@@ -4,11 +4,10 @@ import type { VideoClip } from '../types/api';
 interface VideoPlaylistProps {
     clips: VideoClip[];
     streamComplete: boolean;
-    onDownload?: () => void;
-    isDownloading?: boolean;
+    generatedUrl?: string | null;
 }
 
-const VideoPlaylist: FC<VideoPlaylistProps> = ({ clips, streamComplete, onDownload, isDownloading }) => {
+const VideoPlaylist: FC<VideoPlaylistProps> = ({ clips, streamComplete, generatedUrl }) => {
     const videoARef = useRef<HTMLVideoElement>(null);
     const videoBRef = useRef<HTMLVideoElement>(null);
     const [activePlayer, setActivePlayer] = useState<'A' | 'B'>('A');
@@ -141,18 +140,16 @@ const VideoPlaylist: FC<VideoPlaylistProps> = ({ clips, streamComplete, onDownlo
                     </button>
                 </div>
 
-                {/* Download button */}
-                {streamComplete && onDownload && (
-                    <button
-                        onClick={onDownload}
-                        disabled={isDownloading}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#BF0D3E] text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#a30c35] transition-all duration-200"
+                {/* View on Savant link */}
+                {generatedUrl && (
+                    <a
+                        href={generatedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#BF0D3E] text-white text-sm font-medium hover:bg-[#a30c35] transition-all duration-200"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        {isDownloading ? 'Merging...' : 'Download Merged Video'}
-                    </button>
+                        View on Savant &rarr;
+                    </a>
                 )}
             </div>
         </div>
