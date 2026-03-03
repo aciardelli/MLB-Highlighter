@@ -1,4 +1,4 @@
-import { type FC, useRef, useState, useEffect, useCallback } from 'react';
+import { type FC, useState } from 'react';
 import type { VideoClip } from '../types/api';
 
 interface VideoPlaylistProps {
@@ -8,103 +8,37 @@ interface VideoPlaylistProps {
 }
 
 const VideoPlaylist: FC<VideoPlaylistProps> = ({ clips, streamComplete, generatedUrl }) => {
-    const videoARef = useRef<HTMLVideoElement>(null);
-    const videoBRef = useRef<HTMLVideoElement>(null);
-    const [activePlayer, setActivePlayer] = useState<'A' | 'B'>('A');
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [hasStarted, setHasStarted] = useState(false);
+    const currentClip = clips[currentIndex];
 
-    const getActiveVideo = useCallback(() => {
-        return activePlayer === 'A' ? videoARef.current : videoBRef.current;
-    }, [activePlayer]);
-
-    const getInactiveVideo = useCallback(() => {
-        return activePlayer === 'A' ? videoBRef.current : videoARef.current;
-    }, [activePlayer]);
-
-    // Preload the next clip into the inactive player
-    const preloadNext = useCallback((nextIdx: number) => {
-        const inactiveVideo = getInactiveVideo();
-        if (inactiveVideo && nextIdx < clips.length) {
-            inactiveVideo.src = clips[nextIdx].url;
-            inactiveVideo.load();
+    const handleEnded = () => {
+        if (currentIndex + 1 < clips.length) {
+            setCurrentIndex(currentIndex + 1);
         }
-    }, [clips, getInactiveVideo]);
+    };
 
-    // Start playback when first clip arrives
-    useEffect(() => {
-        if (clips.length > 0 && !hasStarted) {
-            const videoA = videoARef.current;
-            if (videoA) {
-                videoA.src = clips[0].url;
-                videoA.load();
-                videoA.play().catch(() => {});
-                setHasStarted(true);
-            }
-        }
-    }, [clips, hasStarted]);
+    const handlePrev = () => {
+        if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
+    };
 
-    // Preload next clip when current index or clips change
-    useEffect(() => {
-        if (hasStarted && currentIndex + 1 < clips.length) {
-            preloadNext(currentIndex + 1);
-        }
-    }, [currentIndex, clips.length, hasStarted, preloadNext]);
+    const handleNext = () => {
+        if (currentIndex + 1 < clips.length) setCurrentIndex(currentIndex + 1);
+    };
 
-    // Handle clip ending — swap to next
-    const handleEnded = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
-        const activeVideo = getActiveVideo();
-        if (e.currentTarget !== activeVideo) return; // ignore background player
-
-        const nextIndex = currentIndex + 1;
-        if (nextIndex >= clips.length) {
-            return;
-        }
-
-        const inactiveVideo = getInactiveVideo();
-        if (inactiveVideo) {
-            inactiveVideo.play().catch(() => {});
-        }
-
-        setActivePlayer(prev => prev === 'A' ? 'B' : 'A');
-        setCurrentIndex(nextIndex);
-    }, [currentIndex, clips.length, getInactiveVideo, getActiveVideo]);
-
-    // Skip to a specific clip index
-    const skipTo = useCallback((targetIndex: number) => {
-        if (targetIndex < 0 || targetIndex >= clips.length) return;
-
-        const activeVideo = getActiveVideo();
-        if (activeVideo) {
-            activeVideo.src = clips[targetIndex].url;
-            activeVideo.load();
-            activeVideo.play().catch(() => {});
-        }
-        setCurrentIndex(targetIndex);
-    }, [clips, getActiveVideo]);
-
-    const handlePrev = () => skipTo(currentIndex - 1);
-    const handleNext = () => skipTo(currentIndex + 1);
-
-    if (clips.length === 0) return null;
+    if (!currentClip) return null;
 
     return (
         <div className="flex flex-col gap-4">
             {/* Video container */}
             <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
                 <video
-                    ref={videoARef}
+                    key={currentClip.url}
+                    src={currentClip.url}
                     onEnded={handleEnded}
-                    controls={activePlayer === 'A'}
-                    className={`absolute inset-0 w-full h-full ${activePlayer === 'A' ? 'z-10' : 'z-0'}`}
+                    controls
+                    autoPlay
                     playsInline
-                />
-                <video
-                    ref={videoBRef}
-                    onEnded={handleEnded}
-                    controls={activePlayer === 'B'}
-                    className={`absolute inset-0 w-full h-full ${activePlayer === 'B' ? 'z-10' : 'z-0'}`}
-                    playsInline
+                    className="w-full h-full"
                 />
             </div>
 
