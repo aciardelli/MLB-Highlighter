@@ -38,3 +38,35 @@ export interface DownloadResponse {
   download_job_id: string;
 }
 
+// Game types
+
+export interface GameTeam {
+  id: number;
+  name: string;
+  score: number | null;
+}
+
+export interface Game {
+  game_pk: number;
+  date: string;
+  teams: {
+    away: GameTeam;
+    home: GameTeam;
+  };
+  venue: string;
+  status: string;
+}
+
+export interface ScheduleResponse {
+  games: Game[];
+  start_date: string;
+  end_date: string;
+  team_name: string;
+}
+
+export interface GameHighlightsStreamResponse {
+  job_id: string;
+  total_plays: number;
+  game_pk: number;
+}
+
