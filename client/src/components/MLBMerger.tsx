@@ -114,6 +114,7 @@ const MLBMerger = ({ onPhaseChange }: MLBMergerProps) => {
                     onResult={handleResult}
                     onError={handleError}
                     disabled={isProcessing}
+                    hideHint={phase !== 'idle'}
                 />
             </div>
             {filters && (

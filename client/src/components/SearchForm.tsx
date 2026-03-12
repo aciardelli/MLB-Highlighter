@@ -8,9 +8,10 @@ interface SearchFormProps {
     onResult?: (result: StreamResponse) => void;
     onError?: (error: string) => void;
     disabled?: boolean;
+    hideHint?: boolean;
 }
 
-const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, disabled }) => {
+const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, disabled, hideHint }) => {
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -36,7 +37,7 @@ const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, dis
         <form onSubmit={handleSubmit} className="w-full flex flex-col items-center space-y-6">
             <div className="w-full flex">
                 <InputBox
-                    placeholder='Search for plays (e.g., "Aaron Judge home runs" or paste a Baseball Savant URL)'
+                    placeholder='Aaron Judge home runs'
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     className="flex-1 rounded-r-none border-r-0"
@@ -49,6 +50,7 @@ const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, dis
                     {isLoading ? 'Searching...' : 'Search'}
                 </button>
             </div>
+            {!hideHint && <p className="text-sm text-neutral-400">Supports natural language queries and Baseball Savant URLs</p>}
         </form>
     )
 }
