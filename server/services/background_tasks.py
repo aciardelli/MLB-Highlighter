@@ -2,7 +2,7 @@ from services.SavantMerger import SavantMerger
 from services.SavantScraper import SavantScraper
 from services.VideoMetadata import VideoMetadata
 from services.JobStore import job_store
-from models.job import JobStatus
+from models.job import JobStatus, VideoClipMetadata
 import aiohttp
 import logging
 
@@ -31,17 +31,17 @@ async def scrape_and_stream_urls(url: str, job_id: str):
             job_store.update_status(job_id, JobStatus.STREAMING_URLS)
 
             async def on_url_resolved(video_data: VideoMetadata, index: int):
-                metadata = {
-                    "batter": video_data.batter,
-                    "pitcher": video_data.pitcher,
-                    "pitch_type": video_data.pitch_type,
-                    "pitch_velo": video_data.pitch_velo,
-                    "exit_velo": video_data.exit_velo,
-                    "distance": video_data.distance,
-                    "date": video_data.date,
-                    "matchup": video_data.matchup,
-                    "count": video_data.count,
-                }
+                metadata = VideoClipMetadata(
+                    batter=video_data.batter,
+                    pitcher=video_data.pitcher,
+                    pitch_type=video_data.pitch_type,
+                    pitch_velo=video_data.pitch_velo,
+                    exit_velo=video_data.exit_velo,
+                    distance=video_data.distance,
+                    date=video_data.date,
+                    matchup=video_data.matchup,
+                    count=video_data.count,
+                )
                 job_store.emit_video_url(job_id, video_data.mp4_video_url, index, metadata)
 
             await ss.get_mp4_links_streaming(session, on_url_resolved)

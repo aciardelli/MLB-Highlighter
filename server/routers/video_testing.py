@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from services.SavantScraper import valid_url
 from services.SavantQuery import SavantQuery
 from models.query import Query
+from models.responses import ProcessQueryResponse, ProcessUrlResponse
 from limiter import limiter
 
 router = APIRouter()
@@ -12,12 +13,12 @@ async def process_query(request: Request, query: Query):
     try:
         service = SavantQuery()
         result = await service.process_query(query)
-        return {
-            "message": "Query processed successfully",
-            "original_query": query.query,
-            "generated_url": result.url,
-            "filter_display": result.filters.get_filter_display(),
-        }
+        return ProcessQueryResponse(
+            message="Query processed successfully",
+            original_query=query.query,
+            generated_url=result.url,
+            filter_display=result.filters.get_filter_display(),
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query processing failed: {str(e)}")
 
@@ -27,7 +28,7 @@ async def process_url(request: Request, url: str):
     if not valid_url(url):
         raise HTTPException(status_code=400, detail="Invalid Baseball Savant URL")
 
-    return {
-        "message": "URL is valid",
-        "url": url,
-    }
+    return ProcessUrlResponse(
+        message="URL is valid",
+        url=url,
+    )
