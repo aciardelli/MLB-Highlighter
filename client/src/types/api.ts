@@ -70,3 +70,31 @@ export interface GameHighlightsStreamResponse {
   game_pk: number;
 }
 
+export interface PlayPlayer {
+  name: string;
+  id: number;
+}
+
+export interface Play {
+  inning: number;
+  half_inning: string;
+  batter: PlayPlayer;
+  pitcher: PlayPlayer;
+  event: string;
+  event_type: string;
+  description: string;
+  play_id: string;
+  is_scoring_play: boolean;
+  batting_team_id: number;
+}
+
+export interface GamePlaysResponse {
+  game_pk: number;
+  away_team: GameTeam;
+  home_team: GameTeam;
+  plays: Play[];
+  event_types: string[];
+  inning_count: number;
+  total_plays: number;
+}
+

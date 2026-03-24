@@ -69,11 +69,12 @@ async def stream_highlights(request: Request, body: GameHighlightsRequest, backg
 
     plays = [p for p in result["plays"] if p.get("play_id")]
 
+    if body.play_ids is not None:
+        requested_ids = set(body.play_ids)
+        plays = [p for p in plays if p["play_id"] in requested_ids]
+
     if not plays:
         raise HTTPException(status_code=404, detail="No plays with video found for this game")
-
-    if len(plays) > 100:
-        plays = plays[:100]
 
     job = job_store.create_job()
     background_tasks.add_task(stream_game_highlights, plays, job["id"])

@@ -60,3 +60,4 @@ class GamePlaysRequest(BaseModel):
 
 class GameHighlightsRequest(BaseModel):
     game_pk: int
+    play_ids: list[str] | None = None

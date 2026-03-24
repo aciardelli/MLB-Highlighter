@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import GameCard from '../components/GameCard'
+import GameFilters from '../components/GameFilters'
 import VideoPlaylist from '../components/VideoPlaylist'
 import RequestStatus from '../components/RequestStatus'
 import { gameService } from '../api/gameService'
 import { streamClipUrls } from '../api/sseService'
-import type { Game, VideoClip } from '../types/api'
+import type { Game, VideoClip, GamePlaysResponse } from '../types/api'
 
-type Phase = 'idle' | 'submitting' | 'streaming' | 'stream-complete' | 'error';
-type View = 'list' | 'player';
+type Phase = 'idle' | 'loading-plays' | 'filtering' | 'submitting' | 'streaming' | 'stream-complete' | 'error';
+type View = 'list' | 'filter' | 'player';
 
 const MLB_TEAMS = [
     "Arizona Diamondbacks",
@@ -51,6 +52,10 @@ function GameSearch() {
     const [loadingGames, setLoadingGames] = useState(false);
     const [gamesError, setGamesError] = useState<string | null>(null);
 
+    // Filter view state
+    const [playsData, setPlaysData] = useState<GamePlaysResponse | null>(null);
+    const [loadingPlays, setLoadingPlays] = useState(false);
+
     // Player view state
     const [view, setView] = useState<View>('list');
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
@@ -60,6 +65,7 @@ function GameSearch() {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const eventSourceRef = useRef<EventSource | null>(null);
+    const pendingPlayIdsRef = useRef<string[] | undefined>(undefined);
 
     const hasInteracted = selectedTeam !== '';
 
@@ -95,9 +101,12 @@ function GameSearch() {
     useEffect(() => {
         if (phase !== 'streaming' || !selectedGame) return;
 
+        const playIds = pendingPlayIdsRef.current;
+        pendingPlayIdsRef.current = undefined;
+
         const startStream = async () => {
             try {
-                const res = await gameService.streamHighlights(selectedGame.game_pk);
+                const res = await gameService.streamHighlights(selectedGame.game_pk, playIds);
                 const es = streamClipUrls(res.job_id, {
                     onClip: (clip) => {
                         setClips(prev => {
@@ -146,42 +155,82 @@ function GameSearch() {
         };
     }, []);
 
-    const handleGameClick = useCallback((gamePk: number) => {
+    const handleGameClick = useCallback(async (gamePk: number) => {
         const game = games.find(g => g.game_pk === gamePk);
         if (!game) return;
 
         setSelectedGame(game);
+        setPlaysData(null);
+        setLoadingPlays(true);
+        setErrorMessage(null);
+        setPhase('loading-plays');
+        setView('filter');
+
+        try {
+            const data = await gameService.getPlays(gamePk);
+            setPlaysData(data);
+            setLoadingPlays(false);
+            setPhase('filtering');
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { detail?: string } | string }; message?: string };
+            const data = error.response?.data;
+            const msg = (typeof data === 'object' ? data?.detail : data)
+                || error.message
+                || 'Failed to load game plays.';
+            setErrorMessage(msg);
+            setLoadingPlays(false);
+            setPhase('error');
+        }
+    }, [games]);
+
+    const handleFilterSubmit = useCallback((playIds: string[]) => {
+        pendingPlayIdsRef.current = playIds;
         setClips([]);
         setStreamComplete(false);
         setErrorMessage(null);
         setPhase('streaming');
         setView('player');
-    }, [games]);
+    }, []);
 
-    const handleBack = useCallback(() => {
+    const handleBackToList = useCallback(() => {
         eventSourceRef.current?.close();
         eventSourceRef.current = null;
         setView('list');
         setPhase('idle');
         setSelectedGame(null);
+        setPlaysData(null);
         setClips([]);
         setStreamComplete(false);
         setErrorMessage(null);
     }, []);
 
-    const gameTitle = selectedGame
-        ? `${selectedGame.teams.away.name} ${selectedGame.teams.away.score ?? ''} @ ${selectedGame.teams.home.name} ${selectedGame.teams.home.score ?? ''}`
+    const handleBackToFilters = useCallback(() => {
+        eventSourceRef.current?.close();
+        eventSourceRef.current = null;
+        setClips([]);
+        setStreamComplete(false);
+        setErrorMessage(null);
+        setPhase('filtering');
+        setView('filter');
+    }, []);
+
+    const gameMatchup = selectedGame
+        ? `${selectedGame.teams.away.name} @ ${selectedGame.teams.home.name}`
+        : '';
+
+    const filterTitle = selectedGame
+        ? `Configure highlights for ${gameMatchup}`
         : '';
 
     const showPlaylist = (phase === 'streaming' || phase === 'stream-complete') && clips.length > 0;
 
-    // Player view
-    if (view === 'player') {
+    // Filter view
+    if (view === 'filter') {
         return (
             <div className="flex flex-col items-center px-4 pt-6">
                 <div className="w-full max-w-6xl">
                     <button
-                        onClick={handleBack}
+                        onClick={handleBackToList}
                         className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors mb-4"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +239,43 @@ function GameSearch() {
                         Back to games
                     </button>
 
-                    <h2 className="text-2xl font-bold text-white mb-6">{gameTitle}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-6">{filterTitle}</h2>
+
+                    {loadingPlays ? (
+                        <div className="flex justify-center py-12">
+                            <div className="w-10 h-10 border-[3px] border-neutral-700 border-t-[#BF0D3E] rounded-full animate-spin" />
+                        </div>
+                    ) : phase === 'error' ? (
+                        <RequestStatus phase="error" query={null} jobStatus="" errorMessage={errorMessage} />
+                    ) : playsData ? (
+                        <GameFilters
+                            playsData={playsData}
+                            onSubmit={handleFilterSubmit}
+                            onBack={handleBackToList}
+                            loading={false}
+                        />
+                    ) : null}
+                </div>
+            </div>
+        );
+    }
+
+    // Player view
+    if (view === 'player') {
+        return (
+            <div className="flex flex-col items-center px-4 pt-6">
+                <div className="w-full max-w-6xl">
+                    <button
+                        onClick={handleBackToFilters}
+                        className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors mb-4"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back to filters
+                    </button>
+
+                    <h2 className="text-2xl font-bold text-white mb-6">{gameMatchup}</h2>
 
                     {showPlaylist ? (
                         <VideoPlaylist clips={clips} streamComplete={streamComplete} />

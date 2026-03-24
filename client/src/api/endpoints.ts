@@ -7,5 +7,6 @@ export const ENDPOINTS = {
     HEALTH: '/health',
     ROOT: '/',
     GAME_SCHEDULE: '/game/schedule',
+    GAME_PLAYS: '/game/plays',
     GAME_HIGHLIGHTS_STREAM: '/game/highlights/stream',
 } as const;
