@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from routers import video, video_testing
+from routers import video, game, testing
 from services.JobStore import job_store
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -43,7 +43,8 @@ app.add_middleware(
 )
 
 app.include_router(video.router, prefix="/video", tags=["video"])
-app.include_router(video_testing.router, prefix="/video/testing", tags=["testing"])
+app.include_router(game.router, prefix="/game", tags=["game"])
+app.include_router(testing.router, prefix="/testing", tags=["testing"])
 
 @app.get("/health")
 @limiter.exempt

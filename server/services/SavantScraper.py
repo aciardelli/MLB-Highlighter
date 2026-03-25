@@ -124,12 +124,11 @@ class SavantScraper:
 
         logger.info(f"Found {len(self.video_data_list)} video URLs")
 
-    async def get_mp4_links_streaming(self, session: aiohttp.ClientSession, callback) -> None:
+    async def get_mp4_links_streaming(self, session: aiohttp.ClientSession, callback, reverse: bool = True) -> None:
         """Resolve mp4 links one at a time with limited concurrency, calling callback for each valid URL."""
         semaphore = asyncio.Semaphore(3)
 
-        # Reverse for chronological order
-        ordered_list = list(reversed(self.video_data_list))
+        ordered_list = list(reversed(self.video_data_list)) if reverse else self.video_data_list
 
         async def fetch_and_emit(video_data: VideoMetadata, index: int):
             async with semaphore:

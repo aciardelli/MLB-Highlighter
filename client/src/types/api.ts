@@ -38,3 +38,63 @@ export interface DownloadResponse {
   download_job_id: string;
 }
 
+// Game types
+
+export interface GameTeam {
+  id: number;
+  name: string;
+  score: number | null;
+}
+
+export interface Game {
+  game_pk: number;
+  date: string;
+  teams: {
+    away: GameTeam;
+    home: GameTeam;
+  };
+  venue: string;
+  status: string;
+}
+
+export interface ScheduleResponse {
+  games: Game[];
+  start_date: string;
+  end_date: string;
+  team_name: string;
+}
+
+export interface GameHighlightsStreamResponse {
+  job_id: string;
+  total_plays: number;
+  game_pk: number;
+}
+
+export interface PlayPlayer {
+  name: string;
+  id: number;
+}
+
+export interface Play {
+  inning: number;
+  half_inning: string;
+  batter: PlayPlayer;
+  pitcher: PlayPlayer;
+  event: string;
+  event_type: string;
+  description: string;
+  play_id: string;
+  is_scoring_play: boolean;
+  batting_team_id: number;
+}
+
+export interface GamePlaysResponse {
+  game_pk: number;
+  away_team: GameTeam;
+  home_team: GameTeam;
+  plays: Play[];
+  event_types: string[];
+  inning_count: number;
+  total_plays: number;
+}
+

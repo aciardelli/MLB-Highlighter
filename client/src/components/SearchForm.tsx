@@ -37,7 +37,7 @@ const SearchForm: FC<SearchFormProps> = ({ onSubmitStart, onResult, onError, dis
         <form onSubmit={handleSubmit} className="w-full flex flex-col items-center space-y-6">
             <div className="w-full flex">
                 <InputBox
-                    placeholder='Aaron Judge home runs'
+                    placeholder='Search for plays (e.g., "Aaron Judge home runs")'
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     className="flex-1 rounded-r-none border-r-0"

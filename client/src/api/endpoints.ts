@@ -5,5 +5,8 @@ export const ENDPOINTS = {
     DOWNLOAD_START: '/video/download/start/',
     DOWNLOAD_MERGED: '/video/download/merged/',
     HEALTH: '/health',
-    ROOT: '/'
+    ROOT: '/',
+    GAME_SCHEDULE: '/game/schedule',
+    GAME_PLAYS: '/game/plays',
+    GAME_HIGHLIGHTS_STREAM: '/game/highlights/stream',
 } as const;
