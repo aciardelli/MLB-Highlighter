@@ -11,7 +11,7 @@ function formatDate(dateStr: string): string {
     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-export default function GameCard({ game, onClick, highlightTeam }: GameCardProps) {
+export default function GameCard({ game, onClick }: GameCardProps) {
     const { teams, venue, status, date } = game;
     const isFinal = status === 'Final';
 

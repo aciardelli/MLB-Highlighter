@@ -157,25 +157,6 @@ export default function GameFilters({ playsData, onSubmit, onBack, loading }: Ga
         });
     }, []);
 
-    const isTeamAllSelected = (teamPlayerIds: { batters: Set<number>; pitchers: Set<number> }) => {
-        return Array.from(teamPlayerIds.batters).every(id => selectedBatterIds.has(id))
-            && Array.from(teamPlayerIds.pitchers).every(id => selectedPitcherIds.has(id));
-    };
-
-    const toggleTeamAll = (teamPlayerIds: { batters: Set<number>; pitchers: Set<number> }) => {
-        const allSelected = isTeamAllSelected(teamPlayerIds);
-        setSelectedBatterIds(prev => {
-            const next = new Set(prev);
-            for (const id of teamPlayerIds.batters) allSelected ? next.delete(id) : next.add(id);
-            return next;
-        });
-        setSelectedPitcherIds(prev => {
-            const next = new Set(prev);
-            for (const id of teamPlayerIds.pitchers) allSelected ? next.delete(id) : next.add(id);
-            return next;
-        });
-    };
-
     const toggleAllEvents = useCallback(() => {
         setSelectedEvents(prev => prev.size === allEvents.size ? new Set() : new Set(allEvents));
     }, [allEvents]);
