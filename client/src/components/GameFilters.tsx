@@ -29,16 +29,16 @@ function getTeamPlayers(plays: Play[], teamId: number): TeamPlayers {
     };
 }
 
-function CheckboxItem({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
+function PlayerToggle({ player, selected, onToggle }: { player: PlayPlayer; selected: boolean; onToggle: () => void }) {
     return (
-        <label className="flex items-center gap-2 py-1 px-1 rounded hover:bg-neutral-700/30 cursor-pointer select-none">
+        <label className="w-full flex items-center gap-2 py-1.5 px-2.5 rounded-lg cursor-pointer select-none transition-all text-sm hover:bg-neutral-700/30">
             <input
                 type="checkbox"
-                checked={checked}
-                onChange={onChange}
-                className="w-4 h-4 rounded border-neutral-600 bg-neutral-700 text-[#BF0D3E] focus:ring-[#BF0D3E] focus:ring-offset-0 accent-[#BF0D3E] cursor-pointer"
+                checked={selected}
+                onChange={onToggle}
+                className="w-3.5 h-3.5 rounded border-neutral-600 bg-neutral-700 text-[#BF0D3E] focus:ring-[#BF0D3E] focus:ring-offset-0 accent-[#BF0D3E] cursor-pointer flex-shrink-0"
             />
-            <span className="text-sm text-neutral-200 truncate">{label}</span>
+            <span className={`truncate ${selected ? 'text-white' : 'text-neutral-400'}`}>{player.name}</span>
         </label>
     );
 }
@@ -47,12 +47,14 @@ function SelectAllButton({ allSelected, onToggle }: { allSelected: boolean; onTo
     return (
         <button
             onClick={onToggle}
-            className="text-xs text-[#BF0D3E] hover:text-[#e0325a] transition-colors cursor-pointer"
+            className={`text-xs transition-colors cursor-pointer ${allSelected ? 'text-neutral-400 hover:text-neutral-300' : 'text-[#BF0D3E] hover:text-[#e0325a]'}`}
         >
             {allSelected ? 'Deselect all' : 'Select all'}
         </button>
     );
 }
+
+type RosterTab = 'batters' | 'pitchers';
 
 export default function GameFilters({ playsData, onSubmit, onBack, loading }: GameFiltersProps) {
     const { plays, away_team, home_team } = playsData;
@@ -65,6 +67,9 @@ export default function GameFilters({ playsData, onSubmit, onBack, loading }: Ga
     const [selectedBatterIds, setSelectedBatterIds] = useState<Set<number>>(() => new Set(allBatterIds));
     const [selectedPitcherIds, setSelectedPitcherIds] = useState<Set<number>>(() => new Set(allPitcherIds));
     const [selectedEvents, setSelectedEvents] = useState<Set<string>>(() => new Set(allEvents));
+
+    const [awayTab, setAwayTab] = useState<RosterTab>('batters');
+    const [homeTab, setHomeTab] = useState<RosterTab>('batters');
 
     // Players grouped by team
     const awayPlayers = useMemo(() => getTeamPlayers(plays, away_team.id), [plays, away_team.id]);
@@ -188,67 +193,83 @@ export default function GameFilters({ playsData, onSubmit, onBack, loading }: Ga
 
     const scoringCount = useMemo(() => plays.filter(p => p.is_scoring_play).length, [plays]);
 
+    const isTabAllSelected = (tab: RosterTab, teamPlayerIds: { batters: Set<number>; pitchers: Set<number> }) => {
+        const ids = tab === 'batters' ? teamPlayerIds.batters : teamPlayerIds.pitchers;
+        const selected = tab === 'batters' ? selectedBatterIds : selectedPitcherIds;
+        return Array.from(ids).every(id => selected.has(id));
+    };
+
+    const toggleTabAll = (tab: RosterTab, teamPlayerIds: { batters: Set<number>; pitchers: Set<number> }) => {
+        const ids = tab === 'batters' ? teamPlayerIds.batters : teamPlayerIds.pitchers;
+        const setter = tab === 'batters' ? setSelectedBatterIds : setSelectedPitcherIds;
+        toggleAllInSet(setter, ids);
+    };
+
     const renderTeamCard = (
         teamName: string,
         players: TeamPlayers,
         teamPlayerIds: { batters: Set<number>; pitchers: Set<number> },
-    ) => (
-        <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-white">{teamName}</h3>
-                <SelectAllButton
-                    allSelected={isTeamAllSelected(teamPlayerIds)}
-                    onToggle={() => toggleTeamAll(teamPlayerIds)}
-                />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Batters</h4>
-                    <div className="space-y-0.5">
-                        {players.batters.map(player => (
-                            <CheckboxItem
-                                key={player.id}
-                                label={player.name}
-                                checked={selectedBatterIds.has(player.id)}
-                                onChange={() => toggleSet(setSelectedBatterIds, player.id)}
-                            />
-                        ))}
-                    </div>
+        activeTab: RosterTab,
+        setActiveTab: (tab: RosterTab) => void,
+    ) => {
+        const currentPlayers = activeTab === 'batters' ? players.batters : players.pitchers;
+        const selectedIds = activeTab === 'batters' ? selectedBatterIds : selectedPitcherIds;
+        const setter = activeTab === 'batters' ? setSelectedBatterIds : setSelectedPitcherIds;
+
+        return (
+            <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-white">{teamName}</h3>
+                    <SelectAllButton
+                        allSelected={isTabAllSelected(activeTab, teamPlayerIds)}
+                        onToggle={() => toggleTabAll(activeTab, teamPlayerIds)}
+                    />
                 </div>
-                <div>
-                    <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1.5">Pitchers</h4>
-                    <div className="space-y-0.5">
-                        {players.pitchers.map(player => (
-                            <CheckboxItem
-                                key={player.id}
-                                label={player.name}
-                                checked={selectedPitcherIds.has(player.id)}
-                                onChange={() => toggleSet(setSelectedPitcherIds, player.id)}
-                            />
-                        ))}
-                    </div>
+
+                {/* Batter / Pitcher toggle */}
+                <div className="flex bg-neutral-900/80 rounded-lg p-0.5 mb-3">
+                    <button
+                        onClick={() => setActiveTab('batters')}
+                        className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                            activeTab === 'batters'
+                                ? 'bg-[#BF0D3E] text-white shadow-sm'
+                                : 'text-neutral-500 hover:text-neutral-300'
+                        }`}
+                    >
+                        Batters ({players.batters.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('pitchers')}
+                        className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                            activeTab === 'pitchers'
+                                ? 'bg-[#BF0D3E] text-white shadow-sm'
+                                : 'text-neutral-500 hover:text-neutral-300'
+                        }`}
+                    >
+                        Pitchers ({players.pitchers.length})
+                    </button>
+                </div>
+
+                <div className="flex flex-col gap-1 overflow-y-auto max-h-[324px] pr-1">
+                    {currentPlayers.map(player => (
+                        <PlayerToggle
+                            key={player.id}
+                            player={player}
+                            selected={selectedIds.has(player.id)}
+                            onToggle={() => toggleSet(setter, player.id)}
+                        />
+                    ))}
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <div className="flex flex-col h-full">
-            {/* Scoring plays quick-filter */}
-            <button
-                onClick={selectScoringPlays}
-                className="w-full mb-4 py-3 px-4 bg-[#BF0D3E]/10 border border-[#BF0D3E]/30 rounded-xl text-sm font-medium text-[#BF0D3E] hover:bg-[#BF0D3E]/20 hover:border-[#BF0D3E]/50 transition-colors cursor-pointer flex items-center justify-center gap-2"
-            >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Scoring Plays Only ({scoringCount})
-            </button>
-
             {/* Team columns */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderTeamCard(away_team.name, awayPlayers, awayPlayerIds)}
-                {renderTeamCard(home_team.name, homePlayers, homePlayerIds)}
+                {renderTeamCard(away_team.name, awayPlayers, awayPlayerIds, awayTab, setAwayTab)}
+                {renderTeamCard(home_team.name, homePlayers, homePlayerIds, homeTab, setHomeTab)}
             </div>
 
             {/* Events — grouped horizontally below teams */}
@@ -257,28 +278,32 @@ export default function GameFilters({ playsData, onSubmit, onBack, loading }: Ga
                     <h3 className="text-sm font-semibold text-white">Events</h3>
                     <SelectAllButton allSelected={selectedEvents.size === allEvents.size} onToggle={toggleAllEvents} />
                 </div>
+                <button
+                    onClick={selectScoringPlays}
+                    className="text-sm text-[#BF0D3E] hover:text-[#e0325a] font-medium transition-colors cursor-pointer flex items-center gap-1.5 mb-3"
+                >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Scoring plays only ({scoringCount})
+                </button>
                 <div className="space-y-3">
                     {groupedEvents.map(group => (
                         <div key={group.label}>
                             <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">{group.label}</h4>
                             <div className="flex flex-wrap gap-2">
                                 {group.events.map(event => (
-                                    <label
+                                    <button
                                         key={event}
-                                        className={`flex items-center gap-2 py-1.5 px-3 rounded-lg cursor-pointer select-none transition-colors ${
+                                        onClick={() => toggleSet(setSelectedEvents, event)}
+                                        className={`py-1.5 px-3 rounded-lg cursor-pointer select-none transition-colors text-sm ${
                                             selectedEvents.has(event)
-                                                ? 'bg-[#BF0D3E]/15 border border-[#BF0D3E]/40'
-                                                : 'bg-neutral-700/30 border border-neutral-700/50 hover:bg-neutral-700/50'
+                                                ? 'bg-[#BF0D3E]/15 border border-[#BF0D3E]/40 text-neutral-200'
+                                                : 'bg-neutral-700/30 border border-neutral-700/50 text-neutral-400 hover:bg-neutral-700/50 hover:text-neutral-200'
                                         }`}
                                     >
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedEvents.has(event)}
-                                            onChange={() => toggleSet(setSelectedEvents, event)}
-                                            className="w-3.5 h-3.5 rounded border-neutral-600 bg-neutral-700 text-[#BF0D3E] focus:ring-[#BF0D3E] focus:ring-offset-0 accent-[#BF0D3E] cursor-pointer"
-                                        />
-                                        <span className="text-sm text-neutral-200">{event}</span>
-                                    </label>
+                                        {event}
+                                    </button>
                                 ))}
                             </div>
                         </div>

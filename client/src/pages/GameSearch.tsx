@@ -308,7 +308,7 @@ function GameSearch() {
                             className={`w-full px-5 py-4 bg-neutral-800/50 border text-left transition-all duration-200 text-lg cursor-pointer pr-12 ${
                                 dropdownOpen
                                     ? 'rounded-t-lg border-[#BF0D3E]/50 border-b-neutral-700/50 ring-0'
-                                    : 'rounded-lg border-neutral-700/50 hover:border-neutral-600'
+                                    : 'rounded-lg border-neutral-700/50 hover:border-[#BF0D3E]/50'
                             } ${selectedTeam ? 'text-white' : 'text-neutral-500'}`}
                         >
                             {selectedTeam || 'Select a team...'}

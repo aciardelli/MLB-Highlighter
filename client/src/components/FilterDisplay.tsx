@@ -48,29 +48,33 @@ const FilterDisplay: FC<FilterDisplayProps> = ({ filters }) => {
 
     if (entries.length === 0) return null;
 
-    const renderValue = (value: string | string[]) => {
-        const values = Array.isArray(value) ? value : [value];
-        return values.map((v, i) => (
-            <span
-                key={i}
-                className="inline-block px-3 py-0.5 text-sm bg-neutral-700/60 text-neutral-200 border border-neutral-600/50 rounded-full"
-            >
-                {v}
-            </span>
-        ));
-    };
-
     return (
-        <div className="bg-neutral-800/30 border border-neutral-700/50 rounded-lg p-4">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                {entries.map(([key, value]) => (
-                    <div key={key} className="flex items-center gap-2">
-                        <span className="text-sm text-neutral-500">{FILTER_LABELS[key] ?? key}</span>
-                        <div className="flex flex-wrap gap-1">
-                            {renderValue(value)}
+        <div className="bg-neutral-800/30 border border-neutral-700/50 rounded-lg p-3">
+            <div className="flex flex-wrap gap-2">
+                {entries.map(([key, value]) => {
+                    const label = FILTER_LABELS[key] ?? key;
+                    const values = Array.isArray(value) ? value : [value];
+                    return (
+                        <div
+                            key={key}
+                            className="flex flex-col gap-0.5 px-3 py-1.5 bg-neutral-700/30 border border-neutral-700/50 rounded-md"
+                        >
+                            <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider leading-tight">
+                                {label}
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                                {values.map((v, i) => (
+                                    <span
+                                        key={i}
+                                        className="text-sm text-neutral-200"
+                                    >
+                                        {v}{i < values.length - 1 ? ',' : ''}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

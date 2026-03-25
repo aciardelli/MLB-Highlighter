@@ -19,10 +19,8 @@ function NavBar() {
             to="/"
             end
             className={({ isActive }) =>
-              `text-sm font-medium pb-1 border-b-2 transition-colors ${
-                isActive
-                  ? 'text-white border-[#BF0D3E]'
-                  : 'text-gray-400 border-transparent hover:text-gray-200'
+              `text-sm font-medium text-white pb-1 border-b-2 transition-colors ${
+                isActive ? 'border-[#BF0D3E]' : 'border-transparent'
               }`
             }
           >
@@ -31,10 +29,8 @@ function NavBar() {
           <NavLink
             to="/games"
             className={({ isActive }) =>
-              `text-sm font-medium pb-1 border-b-2 transition-colors ${
-                isActive
-                  ? 'text-white border-[#BF0D3E]'
-                  : 'text-gray-400 border-transparent hover:text-gray-200'
+              `text-sm font-medium text-white pb-1 border-b-2 transition-colors ${
+                isActive ? 'border-[#BF0D3E]' : 'border-transparent'
               }`
             }
           >
