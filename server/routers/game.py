@@ -77,10 +77,10 @@ async def stream_highlights(request: Request, body: GameHighlightsRequest, backg
         raise HTTPException(status_code=404, detail="No plays with video found for this game")
 
     job = job_store.create_job()
-    background_tasks.add_task(stream_game_highlights, plays, job["id"])
+    background_tasks.add_task(stream_game_highlights, plays, job.id)
 
     return {
-        "job_id": job["id"],
+        "job_id": job.id,
         "total_plays": len(plays),
         "game_pk": body.game_pk,
     }
