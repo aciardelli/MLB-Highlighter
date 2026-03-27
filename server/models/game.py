@@ -48,9 +48,9 @@ class ScheduleRequest(BaseModel):
     end_date: date | None = None
 
     def get_date_range(self) -> tuple[date, date]:
-        """Return (start, end) dates, defaulting to the last 7 days."""
+        """Return (start, end) dates, defaulting from Opening Day 2026 to today."""
         end = self.end_date or date.today()
-        start = self.start_date or (end - timedelta(days=7))
+        start = self.start_date or date(2026, 3, 26)
         return start, end
 
 
